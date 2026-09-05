@@ -1,9 +1,9 @@
 ---
-name: antigravity-chinese
+name: antigravity-zh
 description: 为 Google Antigravity 桌面客户端（Agent Manager）安装/还原中文汉化补丁。当用户要求“给 Antigravity 装中文/汉化”、汉化失效后重新安装、或需要还原英文原版时使用。纯 Python 零外部依赖，自动探测平台与安装路径，自动备份并支持一键还原。
 ---
 
-# Antigravity 中文汉化（antigravity-chinese）
+# 谷歌反重力汉化插件（antigravity-zh）
 
 为 Google Antigravity（Agent Manager）注入中文翻译引擎的零依赖安装器。
 
@@ -29,8 +29,8 @@ description: 为 Google Antigravity 桌面客户端（Agent Manager）安装/还
 ### 安装
 
 ```bash
-git clone <repo-url> antigravity-chinese
-cd antigravity-chinese
+git clone https://github.com/zhonghugo/antigravity-zh.git
+cd antigravity-zh
 python3 install.py            # 自动探测路径并安装
 # 或指定路径：
 python3 install.py --asar "/自定义路径/Contents/Resources/app.asar"

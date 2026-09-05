@@ -1,4 +1,4 @@
-# 🀄 Antigravity 中文汉化（antigravity-chinese）
+# 🀄 谷歌反重力汉化插件（antigravity-zh）
 
 为 **Google Antigravity** 桌面客户端（Agent Manager）注入中文翻译的**零依赖**安装器。
 纯 Python 实现，无需 Node.js / npm / asar 工具，一键安装、一键还原。
@@ -20,8 +20,8 @@
 ## 📥 安装
 
 ```bash
-git clone https://github.com/<你的用户名>/antigravity-chinese.git
-cd antigravity-chinese
+git clone https://github.com/zhonghugo/antigravity-zh.git
+cd antigravity-zh
 
 # 安装汉化（自动探测路径）
 python3 install.py
@@ -50,7 +50,7 @@ python3 install.py --status
 ## 📁 项目结构
 
 ```
-antigravity-chinese/
+antigravity-zh/
 ├── install.py          # 主安装器（安装/还原/状态）
 ├── asar.py             # 纯 Python asar 解包/打包库
 ├── dicts/

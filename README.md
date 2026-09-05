@@ -62,8 +62,8 @@ antigravity-zh/
 
 ## 🔧 常见问题
 
-**Q: 汉化后界面没变化
-**A: 确认已完全退出并重新启动 Antigravity（不是最小化）。
+**Q: 汉化后界面没变化 **
+A: 确认已完全退出并重新启动 Antigravity（不是最小化）。
 
 **Q: 提示“应用已损坏，无法打开”？**
 A: 执行 `sudo xattr -rd com.apple.quarantine /Applications/Antigravity.app`。

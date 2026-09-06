@@ -1569,5 +1569,13 @@
   "Yes, and always allow when not in a project": "是，且在非项目时始终允许",
   "when not in a project": "在非项目时",
   "in this conversation": "在此对话中",
-  "tell the agent what to do instead": "告知智能体其他操作"
+  "tell the agent what to do instead": "告知智能体其他操作",
+  "Allow running this command outside the sandbox?": "是否允许在沙箱外运行此命令？",
+  "Confirm the command is safe to run outside of the sandbox with full network and disk access.": "请确认此命令可在沙箱外安全运行，具有完整的网络和磁盘访问权限。",
+  "Allow running this command": "允许运行此命令",
+  "outside the sandbox": "在沙箱外",
+  "outside of the sandbox": "在沙箱外",
+  "full network and disk access": "完整的网络和磁盘访问权限",
+  "sandbox": "沙箱",
+  "command is safe": "命令是安全的"
 }

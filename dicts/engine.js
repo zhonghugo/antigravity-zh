@@ -532,12 +532,12 @@
     // This prevents long unmatched sentences from getting mangled into Chinglish.
     const wordsCount = core.split(/\s+/).filter(Boolean).length;
     if (wordsCount > 3) {
-      // 长文本子串匹配：用词典中超过3词的长词条做替换
-      // 处理 DOM 拆分导致完整文本无法精确匹配的情况（如权限弹窗选项）
+      // 长文本子串匹配：用词典中的词条（>=4字符）按长度降序做替换
+      // 处理 DOM 拆分或动态拼接导致完整文本无法精确匹配的情况（如权限弹窗选项）
       let longTemp = core;
       let longReplaced = false;
       const longKeys = Object.keys(combinedDict)
-        .filter(function (k) { return k.split(/\s+/).filter(Boolean).length > 3; })
+        .filter(function (k) { return k.length >= 4; })
         .sort(function (a, b) { return b.length - a.length; });
       for (var ki = 0; ki < longKeys.length; ki++) {
         var lkey = longKeys[ki];

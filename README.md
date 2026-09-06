@@ -9,7 +9,7 @@
 ## ✨ 特性
 
 - **零外部依赖**：纯 Python 标准库，`python3 install.py` 即装即用
-- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**1566 条词条**）
+- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**1579 条词条**）
 - **原生菜单 / 托盘翻译**：顶部菜单栏（File/Edit/View…）与系统托盘菜单一并汉化
 - **跨平台**：macOS / Windows / Linux 自动探测安装路径
 - **自动备份**：首次安装自动备份原版 `app.asar.bak`
@@ -42,7 +42,7 @@ python3 install.py --status
 
 1. 解包 `app.asar`
 2. 向 `dist/preload.js` 与 `dist/ideInstall/wizardPreload.js` 注入 DOM 翻译引擎
-   （MutationObserver 实时监听 + 1566 条中英词典，属性/placeholder/title 一并翻译）
+   （MutationObserver 实时监听 + 1579 条中英词典，属性/placeholder/title 一并翻译）
 3. 向 `dist/menu.js` 注入原生菜单翻译、`dist/tray.js` 注入托盘菜单翻译
 4. 重新打包（`chrome-devtools-mcp` 保持 unpacked，不影响功能）
 5. macOS 自动 ad-hoc 重签名
@@ -54,11 +54,28 @@ antigravity-zh/
 ├── install.py          # 主安装器（安装/还原/状态）
 ├── asar.py             # 纯 Python asar 解包/打包库
 ├── dicts/
-│   ├── zh_cn.json      # 1566 条全量翻译词典
+│   ├── zh_cn.json      # 1579 条全量翻译词典
 │   └── engine.js       # DOM 翻译引擎模板（含 __DICT_ITEMS__ 占位符）
 ├── SKILL.md            # AI 智能体技能说明（可直接作为豆包工作 Skill 使用）
 └── LICENSE             # MIT
 ```
+
+## 📝 更新日志
+
+### v1.1.0（2026-09-06）
+- 修复：命令权限弹窗标题/警告行未翻译（补 8 条词条）
+- 修复：动态拼接选项（如 `Yes, and always allow '<cmd>' in this conversation`）部分翻译
+- 修复：长文本子串匹配仅支持 >3 词，放宽到 >=4 字符
+- 修复：从零注入时 `extraDict` 未合并到 `dictionary` 导致全英文
+- 修复：分词正则 `/s+/` 缺少反斜杠导致词数计算错误
+- 词典：1566 → 1579 条
+
+### v1.0.0（2026-09-05）
+- 首次发布：零依赖纯 Python 安装器
+- 纯 Python asar 解包/打包（与官方 @electron/asar 交叉验证一致）
+- 1566 条中英词典 + DOM 翻译引擎
+- 原生菜单 / 托盘菜单翻译
+- 一键安装 / 还原 / 状态检测
 
 ## 🔧 常见问题
 

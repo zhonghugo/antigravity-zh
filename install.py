@@ -280,7 +280,7 @@ def patch_quit_dialog(tmp):
         print("[*] main.js 已注入退出弹窗翻译，跳过")
         return
     replacements = [
-        ("buttons: ['Cancel', 'Quit']", "buttons: ['取消', '退出'] // AG_ZH_QUIT_DIALOG"),
+        ("buttons: ['Cancel', 'Quit']", "buttons: ['取消', '退出'], // AG_ZH_QUIT_DIALOG"),
         ("title: 'Confirm Quit'", "title: '确认退出'"),
         ("message: 'Are you sure you want to quit?'", "message: '您确定要退出吗？'"),
         ("detail: 'There may be agents or background tasks running.'",

@@ -413,6 +413,12 @@
   
 
   __DICT_ITEMS__
+  // 将 extraDict 合并到 dictionary（从零注入时必需）
+  if (typeof extraDict !== 'undefined') {
+    for (const ek in extraDict) {
+      if (!(ek in dictionary) && !(ek in coreWords)) dictionary[ek] = extraDict[ek];
+    }
+  }
   const combinedDict = Object.assign({}, coreWords, dictionary);
 
   const escapeRegExp = (str) => {

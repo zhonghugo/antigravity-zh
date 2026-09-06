@@ -524,9 +524,36 @@
       return text;
     }
     // This prevents long unmatched sentences from getting mangled into Chinglish.
-    const wordsCount = core.split(/s+/).filter(Boolean).length;
+    const wordsCount = core.split(/\s+/).filter(Boolean).length;
     if (wordsCount > 3) {
-      return text; // Do not translate, keep original English sentence clean
+      // 长文本子串匹配：用词典中超过3词的长词条做替换
+      // 处理 DOM 拆分导致完整文本无法精确匹配的情况（如权限弹窗选项）
+      let longTemp = core;
+      let longReplaced = false;
+      const longKeys = Object.keys(combinedDict)
+        .filter(function (k) { return k.split(/\s+/).filter(Boolean).length > 3; })
+        .sort(function (a, b) { return b.length - a.length; });
+      for (var ki = 0; ki < longKeys.length; ki++) {
+        var lkey = longKeys[ki];
+        if (lkey.length <= 3) continue;
+        var lescaped = escapeRegExp(lkey);
+        var lstartBoundary = /^[a-zA-Z0-9]/.test(lkey) ? '\\b' : '';
+        var lendBoundary = /[a-zA-Z0-9]$/.test(lkey) ? '\\b' : '';
+        var lregex = new RegExp(lstartBoundary + lescaped + lendBoundary, 'gi');
+        if (lregex.test(longTemp)) {
+          longTemp = longTemp.replace(lregex, combinedDict[lkey]);
+          longReplaced = true;
+        }
+      }
+      if (longReplaced) {
+        var lfinal = longTemp;
+        lfinal = lfinal.replace(/([一-龥])\s+([一-龥])/g, '$1$2');
+        if (matchPunc) {
+          lfinal += trailPunc;
+        }
+        return text.replace(trimmed, lfinal);
+      }
+      return text; // 没有长词条匹配，保持原文
     }
 
     let temp = core;
@@ -546,7 +573,7 @@
 
     let finalTranslated = replaced ? temp : core;
     // 消除中文字符之间可能由分词替换残留的英文空格，提升翻译句子的连贯精致度
-    finalTranslated = finalTranslated.replace(/([一-龥])s+([一-龥])/g, '$1$2');
+    finalTranslated = finalTranslated.replace(/([一-龥])\s+([一-龥])/g, '$1$2');
     if (matchPunc) {
       finalTranslated += trailPunc;
     }

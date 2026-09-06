@@ -11,6 +11,7 @@
 - **零外部依赖**：纯 Python 标准库，`python3 install.py` 即装即用
 - **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**1579 条词条**）
 - **原生菜单 / 托盘翻译**：顶部菜单栏（File/Edit/View…）与系统托盘菜单一并汉化
+- **原生弹窗 / 加载画面**：退出确认弹窗、启动加载画面等主进程原生 UI 一并汉化
 - **跨平台**：macOS / Windows / Linux 自动探测安装路径
 - **自动备份**：首次安装自动备份原版 `app.asar.bak`
 - **一键还原**：`--restore` 恢复官方原版
@@ -44,8 +45,9 @@ python3 install.py --status
 2. 向 `dist/preload.js` 与 `dist/ideInstall/wizardPreload.js` 注入 DOM 翻译引擎
    （MutationObserver 实时监听 + 1579 条中英词典，属性/placeholder/title 一并翻译）
 3. 向 `dist/menu.js` 注入原生菜单翻译、`dist/tray.js` 注入托盘菜单翻译
-4. 重新打包（`chrome-devtools-mcp` 保持 unpacked，不影响功能）
-5. macOS 自动 ad-hoc 重签名
+4. 向 `dist/main.js` 注入退出确认弹窗翻译、`dist/loadingOverlay.js` 注入启动加载画面翻译
+5. 重新打包（`chrome-devtools-mcp` 保持 unpacked，不影响功能）
+6. macOS 自动 ad-hoc 重签名
 
 ## 📁 项目结构
 

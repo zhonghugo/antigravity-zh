@@ -268,6 +268,59 @@ def patch_tray(tmp):
         print("[!] tray.js 钩子未匹配，跳过")
 
 
+def patch_quit_dialog(tmp):
+    """汉化主进程退出确认弹窗（main.js：原生 dialog，DOM 引擎无法触及）。"""
+    main_path = os.path.join(tmp, "dist", "main.js")
+    if not os.path.exists(main_path):
+        print("[!] main.js 不存在，跳过退出弹窗翻译")
+        return
+    with open(main_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    if "AG_ZH_QUIT_DIALOG" in content:
+        print("[*] main.js 已注入退出弹窗翻译，跳过")
+        return
+    replacements = [
+        ("buttons: ['Cancel', 'Quit']", "buttons: ['取消', '退出'] // AG_ZH_QUIT_DIALOG"),
+        ("title: 'Confirm Quit'", "title: '确认退出'"),
+        ("message: 'Are you sure you want to quit?'", "message: '您确定要退出吗？'"),
+        ("detail: 'There may be agents or background tasks running.'",
+         "detail: '可能还有智能体或后台任务正在运行。'"),
+    ]
+    changed = False
+    for old, new in replacements:
+        if old in content:
+            content = content.replace(old, new)
+            changed = True
+    if changed:
+        with open(main_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        print("[OK] 注入 退出弹窗翻译: main.js")
+    else:
+        print("[!] main.js 退出弹窗钩子未匹配，跳过")
+
+
+def patch_loading_overlay(tmp):
+    """汉化启动加载画面（loadingOverlay.js：翻译引擎启动前显示）。"""
+    overlay_path = os.path.join(tmp, "dist", "loadingOverlay.js")
+    if not os.path.exists(overlay_path):
+        print("[!] loadingOverlay.js 不存在，跳过加载画面翻译")
+        return
+    with open(overlay_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    if "AG_ZH_LOADING" in content:
+        print("[*] loadingOverlay.js 已注入加载画面翻译，跳过")
+        return
+    old = '<div class="text">Loading Antigravity</div>'
+    new = '<div class="text">正在加载 Antigravity</div> <!-- AG_ZH_LOADING -->'
+    if old in content:
+        content = content.replace(old, new)
+        with open(overlay_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        print("[OK] 注入 加载画面翻译: loadingOverlay.js")
+    else:
+        print("[!] loadingOverlay.js 钩子未匹配，跳过")
+
+
 MENU_TRANSLATION_CODE = r"""
 const menuTranslationMap = {
   'File': '文件',
@@ -367,6 +420,8 @@ def cmd_install(asar_path, resources_dir):
         patch_file(wizard, dictionary)
     patch_native_menu(tmp)
     patch_tray(tmp)
+    patch_quit_dialog(tmp)
+    patch_loading_overlay(tmp)
 
     # 4. 重打包
     new_asar = os.path.join(tmp, "app.asar.new")

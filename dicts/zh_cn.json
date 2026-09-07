@@ -991,7 +991,7 @@
   "Failed to create directory": "创建目录失败",
   "Directory not found": "未找到该目录",
   "Permission denied": "权限不足，访问被拒绝",
-  "Operation not permitted": "系统操作被拒绝 (Operation not permitted)",
+  "Operation not permitted": "系统操作被拒绝",
   "Disk full": "磁盘空间已满",
   "Write error (disk full?)": "写入错误（磁盘空间可能已满）",
   "Failed to load conversation": "加载对话失败",

@@ -421,6 +421,10 @@
   }
   const combinedDict = Object.assign({}, coreWords, dictionary);
 
+  // 预排序的词典 key 缓存（长词条优先），避免每次翻译重复 Object.keys/filter/sort
+  const sortedKeysAll = Object.keys(combinedDict).sort((a, b) => b.length - a.length);
+  const longKeysSorted = sortedKeysAll.filter(function (k) { return k.length >= 4; });
+
   const escapeRegExp = (str) => {
     const specials = ['[', ']', '(', ')', '{', '}', '*', '+', '?', '.', '^', '$', '|', '\\'];
     return str.split('').map(c => specials.includes(c) ? '\\' + c : c).join('');
@@ -536,12 +540,9 @@
       // 处理 DOM 拆分或动态拼接导致完整文本无法精确匹配的情况（如权限弹窗选项）
       let longTemp = core;
       let longReplaced = false;
-      const longKeys = Object.keys(combinedDict)
-        .filter(function (k) { return k.length >= 4; })
-        .sort(function (a, b) { return b.length - a.length; });
+      const longKeys = longKeysSorted; // 预排序缓存（已过滤 >=4 字符）
       for (var ki = 0; ki < longKeys.length; ki++) {
         var lkey = longKeys[ki];
-        if (lkey.length <= 3) continue;
         var lescaped = escapeRegExp(lkey);
         var lstartBoundary = /^[a-zA-Z0-9]/.test(lkey) ? '\\b' : '';
         var lendBoundary = /[a-zA-Z0-9]$/.test(lkey) ? '\\b' : '';
@@ -564,7 +565,7 @@
 
     let temp = core;
     let replaced = false;
-    const sortedKeys = Object.keys(combinedDict).sort((a, b) => b.length - a.length);
+    const sortedKeys = sortedKeysAll; // 预排序缓存
     for (const key of sortedKeys) {
       if (key.length <= 3 && !/^[a-zA-Z0-9]+$/.test(key)) continue;
       const escapedKey = escapeRegExp(key);

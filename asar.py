@@ -183,8 +183,10 @@ def _read_header(asar_path):
         if len(head) != 8:
             raise ValueError("无效的 asar 文件头")
         v, pickle_size = struct.unpack("<II", head)
-        if v != 4:
-            raise ValueError("不支持的 asar pickle 版本: %d" % v)
+        # v 是外层 size pickle 的 payload 长度（Chromium Pickle 约定，恒为 4），
+        # 并非格式版本号；pickle_size 为 header pickle 总长，需在合理范围内
+        if v != 4 or pickle_size < 8 or pickle_size > 64 * 1024 * 1024:
+            raise ValueError("无效的 asar 文件头")
         f.seek(12)
         len_bytes = f.read(4)
         if len(len_bytes) != 4:

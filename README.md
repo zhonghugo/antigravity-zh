@@ -64,6 +64,15 @@ antigravity-zh/
 
 ## 📝 更新日志
 
+### v1.1.1（2026-09-07）
+
+* 修复：macOS 重签名目标路径错误（多算一层目录导致签名到 /Applications 而非 .app，签名始终失败）
+* 修复：`app.asar` 替换改为同目录暂存 + `os.replace` 原子替换，失败自动回滚 unpacked，避免中断产生损坏文件
+* 修复：asar 文件头校验语义（首字段是 pickle payload 长度而非版本号），增加 pickle_size 合理性检查
+* 修复：`check_app_running` 误报（`pgrep -f Antigravity` 会匹配命令行含该词的任意进程，如打开本仓库的编辑器）
+* 优化：翻译引擎预排序词典缓存，避免每次翻译重复 `Object.keys/filter/sort`
+* 词典：`Operation not permitted` 去除冗余英文括注
+
 ### v1.1.0（2026-09-06）
 - 修复：命令权限弹窗标题/警告行未翻译（补 8 条词条）
 - 修复：动态拼接选项（如 `Yes, and always allow '<cmd>' in this conversation`）部分翻译

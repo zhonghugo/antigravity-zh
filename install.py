@@ -111,7 +111,10 @@ def check_app_running():
     """检测 Antigravity 是否在运行（覆盖写前应退出应用）。"""
     try:
         if sys.platform == "darwin":
-            r = subprocess.run(["pgrep", "-f", "Antigravity"], capture_output=True)
+            # 匹配应用主程序路径而非任意含 "Antigravity" 的命令行，
+            # 避免误报（如打开了本仓库的编辑器进程）
+            r = subprocess.run(["pgrep", "-f", "Antigravity.app/Contents/MacOS"],
+                               capture_output=True)
             return r.returncode == 0
         elif sys.platform == "win32":
             r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq Antigravity.exe"],
@@ -431,21 +434,41 @@ def cmd_install(asar_path, resources_dir):
         shutil.rmtree(tmp, ignore_errors=True)
         sys.exit("[ERR] 打包结果为空")
 
-    # 5. 替换 asar 与 unpacked
+    # 5. 原子替换 asar 与 unpacked
+    #    先把新 asar 复制到同目录暂存文件（保证同一文件系统），再用 os.replace
+    #    原子替换，避免复制中途断电/磁盘满导致 app.asar 损坏；unpacked 同步切换，
+    #    替换失败时自动回滚。
+    staged_asar = asar_path + ".agzh_new"
     old_unpacked = asar_path + ".unpacked"
+    old_unpacked_bak = asar_path + ".unpacked.agzh_old"
+    if os.path.isdir(old_unpacked_bak):
+        shutil.rmtree(old_unpacked_bak)
+    shutil.copy2(new_asar, staged_asar)
     if os.path.isdir(old_unpacked):
-        shutil.rmtree(old_unpacked)
+        os.rename(old_unpacked, old_unpacked_bak)
     if os.path.isdir(new_asar + ".unpacked"):
         shutil.move(new_asar + ".unpacked", old_unpacked)
-    shutil.copy2(new_asar, asar_path)
+    try:
+        os.replace(staged_asar, asar_path)
+    except Exception:
+        if os.path.isdir(old_unpacked):
+            shutil.rmtree(old_unpacked, ignore_errors=True)
+        if os.path.isdir(old_unpacked_bak):
+            os.rename(old_unpacked_bak, old_unpacked)
+        raise
+    finally:
+        if os.path.exists(staged_asar):
+            os.remove(staged_asar)
+    if os.path.isdir(old_unpacked_bak):
+        shutil.rmtree(old_unpacked_bak, ignore_errors=True)
     print("[OK] 已替换 app.asar（新大小: %d bytes）" % os.path.getsize(asar_path))
     print("[OK] SHA256: %s" % sha256(asar_path))
 
     shutil.rmtree(tmp, ignore_errors=True)
 
-    # 6. 签名
+    # 6. 签名（resources_dir -> Contents -> Antigravity.app）
     if sys.platform == "darwin":
-        app_root = os.path.dirname(os.path.dirname(os.path.dirname(resources_dir)))
+        app_root = os.path.dirname(os.path.dirname(resources_dir))
         codesign_macos(app_root)
 
     print("[DONE] 汉化注入完成，请启动 Antigravity 查看效果。")
@@ -459,7 +482,8 @@ def cmd_restore(asar_path, resources_dir):
     # 注意：.unpacked（chrome-devtools-mcp 等）是官方原版内容且不被汉化修改，
     # 安装/还原时均保持一致，无需删除。
     if sys.platform == "darwin":
-        app_root = os.path.dirname(os.path.dirname(os.path.dirname(resources_dir)))
+        # resources_dir -> Contents -> Antigravity.app
+        app_root = os.path.dirname(os.path.dirname(resources_dir))
         codesign_macos(app_root)
     print("[OK] 已还原官方原版 app.asar（SHA256: %s）" % sha256(asar_path))
     print("[OK] 汉化已移除，请重启 Antigravity。")

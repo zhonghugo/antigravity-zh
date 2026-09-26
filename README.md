@@ -9,7 +9,7 @@
 ## ✨ 特性
 
 - **零外部依赖**：纯 Python 标准库，`python3 install.py` 即装即用
-- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**1579 条词条**）
+- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**1583 条词条**）
 - **原生菜单 / 托盘翻译**：顶部菜单栏（File/Edit/View…）与系统托盘菜单一并汉化
 - **原生弹窗 / 加载画面**：退出确认弹窗、启动加载画面等主进程原生 UI 一并汉化
 - **跨平台**：macOS / Windows / Linux 自动探测安装路径
@@ -43,7 +43,7 @@ python3 install.py --status
 
 1. 解包 `app.asar`
 2. 向 `dist/preload.js` 与 `dist/ideInstall/wizardPreload.js` 注入 DOM 翻译引擎
-   （MutationObserver 实时监听 + 1579 条中英词典，属性/placeholder/title 一并翻译）
+   （MutationObserver 实时监听 + 1583 条中英词典，属性/placeholder/title 一并翻译）
 3. 向 `dist/menu.js` 注入原生菜单翻译、`dist/tray.js` 注入托盘菜单翻译
 4. 向 `dist/main.js` 注入退出确认弹窗翻译、`dist/loadingOverlay.js` 注入启动加载画面翻译
 5. 重新打包（`chrome-devtools-mcp` 保持 unpacked，不影响功能）
@@ -56,7 +56,7 @@ antigravity-zh/
 ├── install.py          # 主安装器（安装/还原/状态）
 ├── asar.py             # 纯 Python asar 解包/打包库
 ├── dicts/
-│   ├── zh_cn.json      # 1579 条全量翻译词典
+│   ├── zh_cn.json      # 1583 条全量翻译词典
 │   └── engine.js       # DOM 翻译引擎模板（含 __DICT_ITEMS__ 占位符）
 ├── SKILL.md            # AI 智能体技能说明（可直接作为豆包工作 Skill 使用）
 └── LICENSE             # MIT
@@ -70,7 +70,7 @@ antigravity-zh/
 - 修复：长文本子串匹配仅支持 >3 词，放宽到 >=4 字符
 - 修复：从零注入时 `extraDict` 未合并到 `dictionary` 导致全英文
 - 修复：分词正则 `/s+/` 缺少反斜杠导致词数计算错误
-- 词典：1566 → 1579 条
+- 词典：1566 → 1583 条
 
 ### v1.0.0（2026-09-05）
 - 首次发布：零依赖纯 Python 安装器

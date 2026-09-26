@@ -1577,9 +1577,5 @@
   "outside of the sandbox": "在沙箱外",
   "full network and disk access": "完整的网络和磁盘访问权限",
   "sandbox": "沙箱",
-  "command is safe": "命令是安全的",
-  "No (": "否（",
-  "tell the agent what to do instead)": "告知智能体其他操作）",
-  "Allow running this command outside the sandbox": "是否允许在沙箱外运行此命令",
-  "No (tell the agent what to do instead": "否（告知智能体其他操作"
+  "command is safe": "命令是安全的"
 }

@@ -431,14 +431,6 @@
     const trimmed = text.trim();
     if (!trimmed) return text;
 
-    // --- 纯标点节点：独立渲染的英文标点转中文标点（如 DOM 拆分的 "?" 节点）---
-    if (/^[?.!,;:]+$/.test(trimmed)) {
-      const puncMap = { '?': '？', '.': '。', '!': '！', ',': '，', ';': '；', ':': '：' };
-      let puncOut = '';
-      for (const ch of trimmed) puncOut += puncMap[ch] || ch;
-      return text.replace(trimmed, puncOut);
-    }
-
     // --- Dynamic Agent Logs Regex Rules (Fixed Escaping) ---
     let dynamicMatch = trimmed;
     let isDynamic = false;

@@ -538,9 +538,7 @@
     // 3. Fallback to word-by-word ONLY for short strings (<= 3 words)
     // 如果短语中已经包含了中文字符（即原本就是汉化内容或中英混排），则严禁进入英文分词翻译
     // 这可以完美阻止像中英文混排短语被分词规则执行二次翻译导致重叠和污染
-    if (/[一-龥]/.test(core)) {
-      return text;
-    }
+    const hasChinese = /[一-龥]/.test(core);
     // This prevents long unmatched sentences from getting mangled into Chinglish.
     const wordsCount = core.split(/\s+/).filter(Boolean).length;
     if (wordsCount > 3) {
@@ -571,6 +569,10 @@
       return text; // 没有长词条匹配，保持原文
     }
 
+    // 短文本：已含中文的中英混排短语不再逐词翻译，防止二次污染
+    if (hasChinese) {
+      return text;
+    }
     let temp = core;
     let replaced = false;
     const sortedKeys = sortedKeysAll; // 预排序缓存

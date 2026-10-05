@@ -561,6 +561,8 @@
       if (longReplaced) {
         var lfinal = longTemp;
         lfinal = lfinal.replace(/([一-龥])\s+([一-龥])/g, '$1$2');
+        // 中文之间残留的英文句号转中文句号（长文本子串替换后句中常见）
+        lfinal = lfinal.replace(/([一-龥])\.\s*(?=[一-龥])/g, '$1。');
         if (matchPunc) {
           lfinal += trailPunc;
         }

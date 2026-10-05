@@ -1581,5 +1581,11 @@
   "No (": "否（",
   "tell the agent what to do instead)": "告知智能体其他操作）",
   "Allow running this command outside the sandbox": "是否允许在沙箱外运行此命令",
-  "No (tell the agent what to do instead": "否（告知智能体其他操作"
+  "No (tell the agent what to do instead": "否（告知智能体其他操作",
+  "is now available on paid Pro and Ultra plans": "现已在付费 Pro 和 Ultra 套餐中推出",
+  "Third-party model access will no longer be available on your current plan": "第三方模型访问权限在您当前套餐上将不再可用，",
+  "starting on November 2, 2026": "自2026年11月2日起",
+  "Third-party": "第三方",
+  "no longer": "不再",
+  "current plan": "当前套餐"
 }

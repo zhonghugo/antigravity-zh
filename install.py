@@ -48,6 +48,10 @@ def _load_engine_template():
         return f.read()
 
 
+# 注入引擎 IIFE 的起始两行（build_injection 输出的开头），用于定位旧引擎块
+ENGINE_START_MARKER = "(function() {\n  const dictionary = {"
+
+
 def build_injection(dictionary):
     """由全量字典生成注入 JS（引擎模板 + 字典项）。"""
     items = []
@@ -160,47 +164,42 @@ def load_dictionary():
     return d
 
 
-def strip_block(content, tag):
-    """移除先前注入的字典块（注释标记 + extraDict 定义 + for 循环）。"""
-    start = content.find("// ===== " + tag + " =====")
-    if start == -1:
-        return content, False
-    end_marker = (
-        "    if (!(ek in dictionary) && !(ek in coreWords)) dictionary[ek] = extraDict[ek];\n  }\n"
-    )
-    end = content.find(end_marker, start)
-    if end == -1:
-        print("[!] 找到标记但找不到块结束位置，跳过清理")
-        return content, False
-    end += len(end_marker)
-    return content[:start] + content[end:], True
-
-
 def patch_file(path, dictionary):
     """向 preload/wizardPreload 注入汉化。
 
     分两种情况：
     A. 原版（无引擎）-> 直接追加完整引擎（引擎模板 + 全量字典），无需锚点；
-    B. 已有引擎（含 combinedDict 锚点）-> 先清理旧字典块，再在锚点前注入新字典块。
+    B. 已有引擎 -> 用新词典整体重建追加的引擎块（引擎起点到文件尾），
+       顺带刷新内置词典 / coreWords / 动态规则；无变化时跳过。
+       （此前按 TAG 判断"已注入"直接跳过，导致词典更新后重装不生效。）
     """
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    if TAG in content and "const extraDict" in content:
-        print("[!] %s 已包含当前版本汉化，跳过" % os.path.basename(path))
-        return
-
     engine_marker = "const combinedDict = Object.assign({}, coreWords, dictionary);"
     if engine_marker in content:
-        # 情况 B：引擎已存在，仅更新字典块
-        for old_tag in [TAG] + OLD_TAGS:
-            content, _ = strip_block(content, old_tag)
+        # 情况 B：已注入引擎。引擎 IIFE 从起点标记开始直到文件尾。
+        start = content.rfind(ENGINE_START_MARKER)
+        if start != -1:
+            new_engine = build_injection(dictionary)
+            if content[start:] == new_engine + "\n":
+                print("[*] %s 引擎与词典均无变化，跳过" % os.path.basename(path))
+                return
+            content = content[:start] + new_engine + "\n"
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(content)
+            print("[OK] %s 引擎与词典更新完成" % os.path.basename(path))
+            return
+        # 找不到引擎起点（极旧注入格式）：退回锚点前追加字典块
         injection = build_injection_for_existing(dictionary)
         content = content.replace(engine_marker, injection + "\n" + engine_marker)
-    else:
-        # 情况 A：官方原版，追加完整引擎（含全量字典）
-        content = content.rstrip() + "\n\n" + build_injection(dictionary) + "\n"
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+        print("[OK] %s 追加字典块完成" % os.path.basename(path))
+        return
 
+    # 情况 A：官方原版，追加完整引擎（含全量字典）
+    content = content.rstrip() + "\n\n" + build_injection(dictionary) + "\n"
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
     print("[OK] %s 注入完成" % os.path.basename(path))

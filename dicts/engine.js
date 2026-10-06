@@ -18,7 +18,7 @@
     "Confirm": "\u786e\u8ba4",
     "Submit": "\u63d0\u4ea4",
     "Skip": "\u8df3\u8fc7",
-    "Requesting permission": "\u8bf7\u6c42\u8fd0\u884c\u6743\u9650",
+    "Requesting permission": "\u6b63\u5728\u8bf7\u6c42\u6743\u9650",
     "Insufficient permissions": "\u6743\u9650\u4e0d\u8db3",
     "Permission requested": "\u5df2\u8bf7\u6c42\u6743\u9650",
     "Target": "\u76ee\u6807",
@@ -27,8 +27,8 @@
     "Deny Permission": "\u62d2\u7edd\u6743\u9650",
     "Always Allow": "\u603b\u662f\u5141\u8bb8",
     "Always Deny": "\u603b\u662f\u62d2\u7edd",
-    "Always allow for this session": "\u5728\u6b64\u4f1a\u8bdd\u4e2d\u603b\u662f\u5141\u8bb8",
-    "Always deny for this session": "\u5728\u6b64\u4f1a\u8bdd\u4e2d\u603b\u662f\u62d2\u7edd",
+    "Always allow for this session": "\u5728\u6b64\u4f1a\u8bdd\u4e2d\u59cb\u7ec8\u5141\u8bb8",
+    "Always deny for this session": "\u5728\u6b64\u4f1a\u8bdd\u4e2d\u59cb\u7ec8\u62d2\u7edd",
     "Run in background": "\u540e\u53f0\u8fd0\u884c",
     "Keep running in background": "\u4fdd\u6301\u540e\u53f0\u8fd0\u884c",
     "Execution output": "\u6267\u884c\u8f93\u51fa",
@@ -58,7 +58,6 @@
     "Toggle Developer Tools": "开发者工具",
     "New Window": "新窗口",
     "Quit": "退出",
-    "Cancel": "取消",
     "Confirm Quit": "确认退出",
     "Are you sure you want to quit?": "您确定要退出吗？",
     "There may be agents or background tasks running.": "可能还有智能体或后台任务正在运行。",
@@ -67,7 +66,7 @@
     "Antigravity IDE": "Antigravity IDE 编辑器",
     "Download the Antigravity IDE": "下载 Antigravity IDE",
     "Explore the new Antigravity": "探索全新 Antigravity",
-    "Setting up…": "正在启动/设置中...",
+    "Setting up…": "正在设置...",
     "Agent": "智能体",
     "Agents": "智能体",
     "Subagent": "子智能体",
@@ -113,7 +112,6 @@
     "Advanced": "高级",
     "Developer": "开发者",
     "Save": "保存",
-    "Close": "关闭",
     "Status": "状态",
     "Progress": "进度",
     "Logs": "日志",
@@ -130,7 +128,7 @@
     "Create New Project": "创建新项目",
     "Antigravity": "Antigravity",
     "Antigravity 2.0": "Antigravity 2.0",
-    "Google DeepMind": "谷歌 DeepMind",
+    "Google DeepMind": "Google DeepMind",
     "Advanced Agentic Coding": "高级智能体编码",
     "Welcome to Antigravity": "欢迎使用 Antigravity",
     "Get Started": "开始使用",
@@ -166,9 +164,9 @@
     "Learn more": "了解更多",
     "Project-Specific Settings": "项目专属设置",
     "Project-Specific": "项目专属",
-    "Modify scoped permissions, folders, and Agent settings like Sandbox and Terminal command execution.": "修改项目专属访问权限、工作文件夹以及智能体设置（例如沙盒和终端命令执行）。",
+    "Modify scoped permissions, folders, and Agent settings like Sandbox and Terminal command execution.": "修改项目专属访问权限、工作文件夹以及智能体设置（例如沙箱和终端命令执行）。",
     "Modify scoped permissions, folders, and Agent settings": "修改项目专属访问权限、工作文件夹以及智能体设置",
-    "like Sandbox and Terminal command execution.": "例如沙盒与终端命令执行。",
+    "like Sandbox and Terminal command execution.": "例如沙箱与终端命令执行。",
     "Go to Projects": "转到项目",
     "File Permissions": "文件权限",
     "File Access Rules": "文件访问规则",
@@ -179,14 +177,14 @@
     "Terminal & Tooling Permissions": "终端和工具权限",
     "Terminal Commands": "终端命令",
     "Configure allowed terminal commands.": "配置允许执行的终端命令。",
-    "Commands Outside Sandbox": "沙盒外命令",
-    "Configure allowed commands outside the sandbox.": "配置允许在沙盒外执行的终端命令。",
+    "Commands Outside Sandbox": "沙箱外命令",
+    "Configure allowed commands outside the sandbox.": "配置允许在沙箱外执行的终端命令。",
     "MCP Tools": "MCP 工具",
     "Configure external tools via Model Context Protocol.": "通过模型上下文协议 (MCP) 配置外部工具。",
     "Global": "全局",
-    "Sandbox": "沙盒",
-    "Sandbox enabled": "沙盒已启用",
-    "Sandbox disabled": "沙盒已禁用",
+    "Sandbox": "沙箱",
+    "Sandbox enabled": "沙箱已启用",
+    "Sandbox disabled": "沙箱已禁用",
     "Allowed": "已允许",
     "Denied": "已拒绝",
     "Paths": "路径",
@@ -227,14 +225,14 @@
     
     // Account
     "Account": "账号",
-    "Manage your plan, credentials, and general preferences.": "管理您的计划、凭据和常规偏好。",
+    "Manage your plan, credentials, and general preferences.": "管理您的套餐、凭据与常规偏好。",
     "Enable Telemetry": "启用遥测",
-    "When toggled on, Antigravity collects usage data to help Google enhance performance and features.": "开启后，Antigravity 会收集匿名使用数据，以帮助 Google 持续改进性能和功能。",
+    "When toggled on, Antigravity collects usage data to help Google enhance performance and features.": "开启后，Antigravity 会收集使用数据，以帮助 Google 持续改进性能和功能。",
     "Marketing Emails": "营销电子邮件",
     "Receive product updates, tips, and promotions from Google Antigravity via email.": "通过电子邮件接收来自 Google Antigravity 的产品更新、技巧与促销信息。",
-    "Your Plan:": "您的计划：",
-    "Your Plan: Google AI Pro": "您的计划：Google AI Pro",
-    "You can upgrade to a Google AI Ultra plan to receive the highest rate limits.": "您可以升级到 Google AI Ultra 计划以获得更高额的使用速率限制。",
+    "Your Plan:": "您的套餐：",
+    "Your Plan: Google AI Pro": "您的套餐：Google AI Pro",
+    "You can upgrade to a Google AI Ultra plan to receive the highest rate limits.": "您可以升级到 Google AI Ultra 套餐，获得最高的使用限额。",
     "Email": "电子邮件",
     
     // Browser & App Settings
@@ -244,11 +242,11 @@
     "in the conversation input box.": "在对话输入框中调用该子智能体。",
     "Browser Javascript Execution Policy": "浏览器 JavaScript 执行策略",
     "Controls whether the agent can run custom JavaScript to automate complex browser actions.": "控制智能体是否可以运行自定义 JavaScript 以自动化复杂的浏览器操作。",
-    "Request Review": "需要人工审核",
+    "Request Review": "请求审查",
     "Disabled": "已禁用",
-    "Block all browser JavaScript execution.": "禁止执行所有浏览器 JavaScript。",
-    "Prompt for approval before running browser scripts.": "在运行浏览器脚本前需人工批准。",
-    "Allow full browser script execution without prompting.": "允许执行所有浏览器脚本（无需提示）。",
+    "Block all browser JavaScript execution.": "阻止所有浏览器 JavaScript 执行。",
+    "Prompt for approval before running browser scripts.": "运行浏览器脚本前请求批准。",
+    "Allow full browser script execution without prompting.": "允许完整浏览器脚本执行，无需提示。",
     "Actuation Permissions": "动作执行权限",
     "Browser Actuation Rules": "浏览器操作控制规则",
     "Configure allowed and denied URLs for browser actuation.": "配置允许或禁止浏览器执行动作的 URL 列表。",
@@ -270,8 +268,8 @@
     "Learn more about Default": "了解关于默认预设的更多信息",
     "Default": "默认",
     "Agent Behavior": "智能体行为",
-    "Artifact Review Policy": "工件审核策略",
-    "Specifies agent's behavior when asking for review on artifacts, which are documents it creates to enable a richer conversation experience.": "设置智能体在请求审核工件时的行为方式。工件是其为提供更丰富对话体验而创建的文档。",
+    "Artifact Review Policy": "工件审查策略",
+    "Specifies agent's behavior when asking for review on artifacts, which are documents it creates to enable a richer conversation experience.": "指定智能体在请求审查工件时的行为。工件是其为提供更丰富的对话体验而创建的文档。",
     "Always Ask": "始终询问",
     "Local Permissions": "项目专属权限",
     "Inherits from global settings. Local permissions have higher priority.": "继承自全局设置。项目专属权限具有更高的优先级。",
@@ -287,7 +285,7 @@
     "Configures how the agent tries to access files outside of its working folders.": "配置智能体如何尝试访问其工作文件夹外部的文件。",
     "Terminal command Auto execution": "终端命令自动执行",
     "Controls whether terminal commands require your approval before running.": "控制终端命令在运行前是否需要您批准。",
-    "Require Review": "需要审核",
+    "Require Review": "需要审查",
     "Add Context": "添加上下文",
     "Media": "媒体",
     "Mentions": "提及",
@@ -295,7 +293,7 @@
     "Browser": "浏览器",
     "Worktree": "工作树",
     "Projects": "项目",
-    "Review Changes": "审核更改",
+    "Review Changes": "审查更改",
     "Ask anything, @ to mention, / for actions": "输入任何问题，输入 @ 提及，/ 触发操作",
     "Ask anything, @to mention, /for actions": "输入任何问题，输入 @ 提及，/ 触发操作",
     "Ask anything, @ to mention, / for commands": "输入任何问题，输入 @ 提及，/ 触发命令",
@@ -308,13 +306,13 @@
     "Manage project folders, agent settings, and permissions.": "管理项目文件夹、智能体设置和专属权限。",
 
     // Security Presets
-    "Requires manual review for all terminal commands and file accesses outside of the working folders.": "运行终端命令以及访问工作区外的文件时，均需手动人工审核。",
+    "Requires manual review for all terminal commands and file accesses outside of the working folders.": "运行终端命令以及访问工作区外的文件时，均需手动人工审查。",
     "Full Machine": "完整本机访问",
-    "All terminal commands require review. The agent can read or write to any file in the machine.": "所有终端命令均需审核，智能体可读写本机上的任意文件。",
+    "All terminal commands require review. The agent can read or write to any file in the machine.": "所有终端命令均需审查，智能体可读写本机上的任意文件。",
     "Unrestricted": "无限制模式",
     "Disables all safety barriers for maximal iteration velocity.": "禁用所有安全屏障以获得极致的迭代效率。",
     "Manually customize individual settings.": "手动自定义各项具体设置。",
-    "Always Proceed": "自动继续",
+    "Always Proceed": "始终继续",
 
     // Themes
     "One Light": "One 浅色",
@@ -322,13 +320,13 @@
     "One Dark Pro": "One 深色 Pro",
     
     // Models
-    "Configure AI models and view your quota.": "配置 AI 模型并查看您的配额与可用点数。",
+    "Configure AI models and view your quota.": "配置 AI 模型并查看您的配额。",
     "Refresh": "刷新",
     "Model Credits": "模型额度",
-    "Enable AI Credit Overages": "允许 AI 额度超限使用",
-    "When toggled on, Antigravity will use your AI credits to fulfill model requests once you're out of model quota. Antigravity will always use your model quota first before using AI credits.": "开启后，当您的免费配额耗尽时，Antigravity 将使用您的 AI 点数来满足请求。系统会优先扣除免费模型配额，配额不足时再使用点数。",
+    "Enable AI Credit Overages": "启用 AI 额度超量使用",
+    "When toggled on, Antigravity will use your AI credits to fulfill model requests once you're out of model quota. Antigravity will always use your model quota first before using AI credits.": "开启后，当您的模型配额耗尽时，Antigravity 将使用您的 AI 额度来满足模型请求。Antigravity 始终会先使用您的模型配额，然后再使用 AI 额度。",
     "Model Quota": "模型配额",
-    "View your available model quota and AI credits. Model quota refreshes periodically based on your plan. Enable AI Credit Overages to continue using models when your quota is exhausted.": "查看您的可用模型配额与 AI 账户额度。模型配额会根据您的订阅计划定期刷新。额度耗尽后，可开启 AI 额度超限使用以继续体验。",
+    "View your available model quota and AI credits. Model quota refreshes periodically based on your plan. Enable AI Credit Overages to continue using models when your quota is exhausted.": "查看您可用的模型配额和 AI 额度。模型配额会根据您的套餐定期刷新。启用 AI 额度超量使用，以便在配额耗尽时继续使用模型。",
 
     // Shortcuts & UI
     "Shortcuts": "快捷键",
@@ -403,9 +401,9 @@
     "original": "原始", "backup": "备份", "duration": "持续时间", "seconds": "秒", "timer": "定时器", "timers": "定时器",
     "schedule": "调度", "cron": "定时任务", "tools": "工具", "tool": "工具", "execute": "执行", "execution": "执行", "plan": "计划",
     "chat": "聊天", "message": "消息", "messages": "消息", "history": "历史", "clear history": "清除历史",
-    "worked": "工作了", "changed": "已更改", "review": "审核", "reviewing": "审核中", "reviewed": "已审核", "for": "持续",
-    "thought": "思考了", "edited": "编辑了", "canceled": "已取消", "js": "Js",
-    "explore": "探索", "explored": "浏览了", "change": "更改", "changes": "更改",
+    "changed": "已更改", "review": "审查", "reviewing": "审查中", "reviewed": "已审查",
+    "edited": "编辑了", "canceled": "已取消",
+    "explore": "探索", "change": "更改", "changes": "更改",
     "turn": "回合", "turns": "回合"
   };
 
@@ -447,12 +445,16 @@
     let dynamicMatch = trimmed;
     let isDynamic = false;
     
-    if (/^Worked for \d+s$/.test(trimmed)) {
-      dynamicMatch = dynamicMatch.replace(/Worked for (\d+)s/, '已工作 $1 秒');
+    if (/^Worked for [\d smh]+$/.test(trimmed)) {
+      dynamicMatch = dynamicMatch.replace(/Worked for ((?:\d+[smh])(?:\s\d+[smh])*)/, function (_, d) {
+        return '已工作 ' + d.replace(/(\d+)h/g, '$1 小时').replace(/(\d+)m/g, '$1 分').replace(/(\d+)s/g, '$1 秒');
+      });
       isDynamic = true;
     }
-    if (/^Thought for \d+s$/.test(trimmed)) {
-      dynamicMatch = dynamicMatch.replace(/Thought for (\d+)s/, '已思考 $1 秒');
+    if (/^Thought for [\d smh]+$/.test(trimmed)) {
+      dynamicMatch = dynamicMatch.replace(/Thought for ((?:\d+[smh])(?:\s\d+[smh])*)/, function (_, d) {
+        return '已思考 ' + d.replace(/(\d+)h/g, '$1 小时').replace(/(\d+)m/g, '$1 分').replace(/(\d+)s/g, '$1 秒');
+      });
       isDynamic = true;
     }
     if (/^Edited .* \+\d+ -\d+$/.test(trimmed)) {
@@ -544,31 +546,38 @@
     if (wordsCount > 3) {
       // 长文本子串匹配：用词典中的词条（>=4字符）按长度降序做替换
       // 处理 DOM 拆分或动态拼接导致完整文本无法精确匹配的情况（如权限弹窗选项）
+      // 词边界用 (?<![A-Za-z0-9-]) / (?![A-Za-z0-9-])：连字符视为单词一部分，
+      // 避免 "agy-customizations"、"multi-turn" 等复合词被拆词误翻
       let longTemp = core;
       let longReplaced = false;
+      let longMatchedChars = 0;
       const longKeys = longKeysSorted; // 预排序缓存（已过滤 >=4 字符）
       for (var ki = 0; ki < longKeys.length; ki++) {
         var lkey = longKeys[ki];
         var lescaped = escapeRegExp(lkey);
-        var lstartBoundary = /^[a-zA-Z0-9]/.test(lkey) ? '\\b' : '';
-        var lendBoundary = /[a-zA-Z0-9]$/.test(lkey) ? '\\b' : '';
+        var lstartBoundary = /^[a-zA-Z0-9]/.test(lkey) ? '(?<![A-Za-z0-9-])' : '';
+        var lendBoundary = /[a-zA-Z0-9]$/.test(lkey) ? '(?![A-Za-z0-9-])' : '';
         var lregex = new RegExp(lstartBoundary + lescaped + lendBoundary, 'gi');
-        if (lregex.test(longTemp)) {
-          longTemp = longTemp.replace(lregex, combinedDict[lkey]);
+        longTemp = longTemp.replace(lregex, function (m) {
+          longMatchedChars += (m.match(/[A-Za-z]/g) || []).length;
           longReplaced = true;
-        }
+          return combinedDict[lkey];
+        });
       }
-      if (longReplaced) {
-        var lfinal = longTemp;
-        lfinal = lfinal.replace(/([一-龥])\s+([一-龥])/g, '$1$2');
-        // 中文之间残留的英文句号转中文句号（长文本子串替换后句中常见）
-        lfinal = lfinal.replace(/([一-龥])\.\s*(?=[一-龥])/g, '$1。');
-        if (matchPunc) {
-          lfinal += trailPunc;
-        }
-        return text.replace(trimmed, lfinal);
+      // 覆盖率门槛：命中英文字符占比过低，说明这是整段英文文案
+      // （技能/插件描述、智能体回复等），逐词替换只会产生中英夹杂，保持原文
+      var ltotalChars = (core.match(/[A-Za-z]/g) || []).length;
+      if (!longReplaced || (ltotalChars > 0 && longMatchedChars / ltotalChars < 0.65)) {
+        return text; // 保持原文
       }
-      return text; // 没有长词条匹配，保持原文
+      var lfinal = longTemp;
+      lfinal = lfinal.replace(/([一-龥])\s+([一-龥])/g, '$1$2');
+      // 中文之间残留的英文句号转中文句号（长文本子串替换后句中常见）
+      lfinal = lfinal.replace(/([一-龥])\.\s*(?=[一-龥])/g, '$1。');
+      if (matchPunc) {
+        lfinal += trailPunc;
+      }
+      return text.replace(trimmed, lfinal);
     }
 
     // 短文本：已含中文的中英混排短语不再逐词翻译，防止二次污染
@@ -577,16 +586,28 @@
     }
     let temp = core;
     let replaced = false;
+    let matchedChars = 0;
     const sortedKeys = sortedKeysAll; // 预排序缓存
     for (const key of sortedKeys) {
       if (key.length <= 3 && !/^[a-zA-Z0-9]+$/.test(key)) continue;
       const escapedKey = escapeRegExp(key);
-      const startBoundary = /^[a-zA-Z0-9]/.test(key) ? '\\b' : '';
-      const endBoundary = /[a-zA-Z0-9]$/.test(key) ? '\\b' : '';
+      // 连字符视为单词一部分（见上方长文本分支说明），防止复合词被拆词误翻
+      const startBoundary = /^[a-zA-Z0-9]/.test(key) ? '(?<![A-Za-z0-9-])' : '';
+      const endBoundary = /[a-zA-Z0-9]$/.test(key) ? '(?![A-Za-z0-9-])' : '';
       const regex = new RegExp(startBoundary + escapedKey + endBoundary, 'gi');
-      if (regex.test(temp)) {
-        temp = temp.replace(regex, combinedDict[key]);
+      temp = temp.replace(regex, function (m) {
+        matchedChars += (m.match(/[A-Za-z]/g) || []).length;
         replaced = true;
+        return combinedDict[key];
+      });
+    }
+
+    // 覆盖率门槛：多数单词未命中时（未知英文短语/复合词），逐词替换会产生
+    // 中英夹杂（如 "multi-回合聊天"），保持原文；基本全部命中才输出翻译
+    if (replaced) {
+      var totalChars = (core.match(/[A-Za-z]/g) || []).length;
+      if (totalChars === 0 || matchedChars / totalChars < 0.8) {
+        return text;
       }
     }
 

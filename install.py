@@ -63,18 +63,6 @@ def build_injection(dictionary):
     return _load_engine_template().replace(DICT_PLACEHOLDER, dict_block)
 
 
-def build_injection_for_existing(dictionary):
-    """为已注入引擎的 preload 生成字典块（extraDict 注入到 combinedDict 锚点前）。"""
-    items = []
-    for k, v in dictionary.items():
-        items.append("    %s: %s" % (json.dumps(k, ensure_ascii=False),
-                                     json.dumps(v, ensure_ascii=False)))
-    return ("\n  // ===== %s =====\n  const extraDict = {\n%s\n  };\n"
-            "  for (const ek in extraDict) {\n"
-            "    if (!(ek in dictionary) && !(ek in coreWords)) dictionary[ek] = extraDict[ek];\n"
-            "  }\n" % (TAG, ",\n".join(items)))
-
-
 # ---------------------------------------------------------------- 平台与路径
 def detect_paths(asar_path=None):
     """自动探测 Antigravity 安装路径；返回 (asar_path, resources_dir)。"""
@@ -169,33 +157,27 @@ def patch_file(path, dictionary):
 
     分两种情况：
     A. 原版（无引擎）-> 直接追加完整引擎（引擎模板 + 全量字典），无需锚点；
-    B. 已有引擎 -> 用新词典整体重建追加的引擎块（引擎起点到文件尾），
-       顺带刷新内置词典 / coreWords / 动态规则；无变化时跳过。
-       （此前按 TAG 判断"已注入"直接跳过，导致词典更新后重装不生效。）
+    B. 已有引擎 -> 从第一个引擎起点到文件尾整体重建（历史上多次追加产生的
+       重复引擎块一并清除，避免旧引擎先翻译导致新词典永不生效）。
+       引擎注入始终追加在文件尾部，因此第一个起点之后全是旧引擎内容。
     """
     with open(path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    engine_marker = "const combinedDict = Object.assign({}, coreWords, dictionary);"
-    if engine_marker in content:
-        # 情况 B：已注入引擎。引擎 IIFE 从起点标记开始直到文件尾。
-        start = content.rfind(ENGINE_START_MARKER)
-        if start != -1:
-            new_engine = build_injection(dictionary)
-            if content[start:] == new_engine + "\n":
-                print("[*] %s 引擎与词典均无变化，跳过" % os.path.basename(path))
-                return
-            content = content[:start] + new_engine + "\n"
-            with open(path, "w", encoding="utf-8") as f:
-                f.write(content)
-            print("[OK] %s 引擎与词典更新完成" % os.path.basename(path))
+    if ENGINE_START_MARKER in content:
+        # 情况 B：已注入引擎（含旧格式）。第一个起点到文件尾全部重建。
+        start = content.find(ENGINE_START_MARKER)
+        n_old = content.count(ENGINE_START_MARKER)
+        if n_old > 1:
+            print("[*] %s 检测到 %d 个重复引擎块，合并重建" % (os.path.basename(path), n_old))
+        new_engine = build_injection(dictionary)
+        if content[start:] == new_engine + "\n":
+            print("[*] %s 引擎与词典均无变化，跳过" % os.path.basename(path))
             return
-        # 找不到引擎起点（极旧注入格式）：退回锚点前追加字典块
-        injection = build_injection_for_existing(dictionary)
-        content = content.replace(engine_marker, injection + "\n" + engine_marker)
+        content = content[:start] + new_engine + "\n"
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
-        print("[OK] %s 追加字典块完成" % os.path.basename(path))
+        print("[OK] %s 引擎与词典更新完成" % os.path.basename(path))
         return
 
     # 情况 A：官方原版，追加完整引擎（含全量字典）

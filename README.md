@@ -9,7 +9,7 @@
 ## ✨ 特性
 
 - **零外部依赖**：纯 Python 标准库，`python3 install.py` 即装即用
-- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**1855 条词条**）
+- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**5566 条词条 + 动态正则规则**）
 - **原生菜单 / 托盘翻译**：顶部菜单栏（File/Edit/View…）与系统托盘菜单一并汉化
 - **原生弹窗 / 加载画面**：退出确认弹窗、启动加载画面等主进程原生 UI 一并汉化
 - **跨平台**：macOS / Windows / Linux 自动探测安装路径
@@ -56,13 +56,31 @@ antigravity-zh/
 ├── install.py          # 主安装器（安装/还原/状态）
 ├── asar.py             # 纯 Python asar 解包/打包库
 ├── dicts/
-│   ├── zh_cn.json      # 1855 条全量翻译词典
-│   └── engine.js       # DOM 翻译引擎模板（含 __DICT_ITEMS__ 占位符）
+│   ├── zh_cn.json      # 5566 条全量翻译词典
+│   └── engine.js       # DOM 翻译引擎模板（含 __DICT_ITEMS__ 占位符与动态正则规则）
 ├── SKILL.md            # AI 智能体技能说明（可直接作为豆包工作 Skill 使用）
 └── LICENSE             # MIT
 ```
 
 ## 📝 更新日志
+
+### v1.3.0（2026-10-13）
+
+* 词典：1855 → 5566 条。系统性对比 6 个社区汉化项目（Antigravity-Chinese-Localization、
+  Antigravity-Hans、Antigravity-zh-CN、antigravity-chinese、antigravity-chinese-locale、
+  antigravity-chinese-Zero-Touch），合并其词典精华并统一术语（工件/审查/沙箱/分叉/
+  自定义扩展/额度/智能体），过滤 URL、占位符不匹配与超长条目
+* 引擎新增动态正则规则层（dynamicRules）：约 100 条整串锚定规则，覆盖 N 前/重置倒计时、
+  配额提示、日期时间（Jan 5 - Mar 10、10:30 AM）、永久删除确认、快捷键提示、
+  分屏/终端/模型选择等动态文案；在词典精确匹配之后执行，不劫持已校对词条
+* 引擎新增 `fmtDuration`：`Worked for 1h2m` → `已工作 1 小时 2 分`（紧凑时长自动补空格）
+* 引擎短句翻译门槛改为"全部单词已知"（词均在词典中才输出翻译），替代原 80% 字符覆盖率，
+  消除 "Failed to run" → "已失败 to 运行" 式中英夹杂
+* 吸收 Zero-Touch 项目补充规则：`5m ago` 紧凑时间、`showing X of Y`、`Fold lines`、
+  `Run command: X`、`Load older messages` 等；`Close (Esc)` 等缺失词条
+* 修复：统一「子代理」→「子智能体」（保留网络代理 Proxy 语义的 15 条不受影响）
+* 修复（重要）：install.py 旧格式引擎升级时会产生**重复引擎块**——旧引擎在前先翻译，
+  新词典永不生效。现改为从第一个引擎起点到文件尾整体重建，历史重复块一并清除
 
 ### v1.2.0（2026-10-06）
 

@@ -9,7 +9,7 @@
 ## ✨ 特性
 
 - **零外部依赖**：纯 Python 标准库，`python3 install.py` 即装即用
-- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**1583 条词条**）
+- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**1855 条词条**）
 - **原生菜单 / 托盘翻译**：顶部菜单栏（File/Edit/View…）与系统托盘菜单一并汉化
 - **原生弹窗 / 加载画面**：退出确认弹窗、启动加载画面等主进程原生 UI 一并汉化
 - **跨平台**：macOS / Windows / Linux 自动探测安装路径
@@ -43,7 +43,7 @@ python3 install.py --status
 
 1. 解包 `app.asar`
 2. 向 `dist/preload.js` 与 `dist/ideInstall/wizardPreload.js` 注入 DOM 翻译引擎
-   （MutationObserver 实时监听 + 1583 条中英词典，属性/placeholder/title 一并翻译）
+   （MutationObserver 实时监听 + 1855 条中英词典，属性/placeholder/title 一并翻译）
 3. 向 `dist/menu.js` 注入原生菜单翻译、`dist/tray.js` 注入托盘菜单翻译
 4. 向 `dist/main.js` 注入退出确认弹窗翻译、`dist/loadingOverlay.js` 注入启动加载画面翻译
 5. 重新打包（`chrome-devtools-mcp` 保持 unpacked，不影响功能）
@@ -56,13 +56,36 @@ antigravity-zh/
 ├── install.py          # 主安装器（安装/还原/状态）
 ├── asar.py             # 纯 Python asar 解包/打包库
 ├── dicts/
-│   ├── zh_cn.json      # 1583 条全量翻译词典
+│   ├── zh_cn.json      # 1855 条全量翻译词典
 │   └── engine.js       # DOM 翻译引擎模板（含 __DICT_ITEMS__ 占位符）
 ├── SKILL.md            # AI 智能体技能说明（可直接作为豆包工作 Skill 使用）
 └── LICENSE             # MIT
 ```
 
 ## 📝 更新日志
+
+### v1.2.0（2026-10-06）
+
+* 词典：1583 → 1831 条。基于实际 UI 代码（main bundle）提取漏翻词条，补齐插件市场、
+  反馈问卷、加载/状态提示、查找替换栏、附件标签、调度频率等场景
+* 修复：统一核心术语——Artifact 工件、Worktree 工作树、Sandbox 沙箱、Review 审查、
+  Fork 分叉、订阅 plan 套餐，并区分 quota（配额）与 credits（额度）
+* 修复：清除约 20 条冗余英文括注（如"默认 (Default)"），主题名 Catppuccin/Dracula 保留原名
+* 修复：引擎内置词典与 `zh_cn.json` 多处同键不同值（内置优先导致词典修改不生效），已全部对齐
+* 修复：coreWords 移除 `for→持续`、`worked→工作了`、`thought→思考了`、`explored→浏览了`、
+  `js→Js` 等易把正常语句拼成乱码的词条（对应的动态状态正则已覆盖）
+* 修复：`Worked for 2m 30s` / `Thought for 1h` 类时长状态支持分钟/小时并转换单位（此前仅支持秒）
+* 词典：1831 → 1855 条。补齐设置页技能/插件的描述翻译（Gemini API、
+  Antigravity SDK、Sepia、agy-customizations 等本机已装项），以及
+  Plugins/Plugin/Automations/Preview 栏目标题与"Plugin: xxx"徽章
+* 修复：设置页技能/插件英文描述被逐词替换成中英夹杂（如"multi-回合聊天"、
+  "their 正在加载 priority"）。引擎新增覆盖率门槛——长句命中不足 65%、
+  短句不足 80% 时保持原文不再硬翻；连字符复合词（agy-customizations、
+  text-to-video 等）不再被拆词误翻
+* 修复：词典更新后重装不生效——重装时按 TAG 判断"已注入"直接跳过，导致新旧词典
+  同标签时永不更新。现改为整体重建追加的引擎块（顺带刷新内置词典 / coreWords / 动态规则），
+  内容无变化时才跳过
+* 修复：`• Asks for Review` 词条错贴为另一条描述的译文
 
 ### v1.1.1（2026-09-07）
 

@@ -16,7 +16,7 @@ description: 为 Google Antigravity 桌面客户端（Agent Manager）安装/还
 
 1. 解包 `app.asar`
 2. 向 `dist/preload.js` 与 `dist/ideInstall/wizardPreload.js` 注入 DOM 翻译引擎
-   （MutationObserver + 全量字典，约 1560 条词条，覆盖主界面/设置/弹窗/报错）
+   （MutationObserver + 全量字典，约 1850 条词条，覆盖主界面/设置/弹窗/报错）
 3. 向 `dist/menu.js` 注入原生菜单翻译、`dist/tray.js` 注入托盘菜单翻译
 4. 重新打包（chrome-devtools-mcp 保持 unpacked）
 5. macOS 自动 ad-hoc 重签名

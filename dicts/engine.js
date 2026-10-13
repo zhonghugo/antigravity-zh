@@ -398,7 +398,6 @@
       if (!(clk in lowerIndex)) lowerIndex[clk] = ck;
     }
   }
-  rebuildLowerIndex();
 
   // ===== 外部词典热加载（借鉴 Zero-Touch 架构）=====
   // 从 ~/.antigravity-zh/zh-CN.json 读外部词典，覆盖嵌入词典；文件变化时自动重载

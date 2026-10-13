@@ -600,7 +600,7 @@
   }
 
   // 用于模糊匹配类名中包含代码/预览/diff相关关键词的正则
-  const codeClassPattern = /(?:^|[\s_-])(code|diff|source|syntax|highlight|viewer|hljs|shiki|prism|monaco|codemirror|token|line-number|line-content|gutter|codeblock|code-block|code-view|code-preview|file-preview|file-content)(?:$|[\s_-])/i;
+  const codeClassPattern = /(?:^|[\s_-])(hljs|shiki|prism|monaco|codemirror|line-number|line-content|gutter|codeblock|code-block|code-view|code-preview|file-preview|file-content|syntax-highlighting)(?:$|[\s_-])/i;
 
   function shouldSkipNode(node) {
     if (!node) return true;
@@ -674,7 +674,6 @@
         if (
           lowerClass.includes('code-line') ||
           lowerClass.includes('select-contain') ||
-          lowerClass.includes('font-mono') ||
           codeClassPattern.test(cur.className)
         ) {
           return true;

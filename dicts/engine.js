@@ -417,11 +417,57 @@
       if (!(ek in dictionary) && !(ek in coreWords)) dictionary[ek] = extraDict[ek];
     }
   }
-  const combinedDict = Object.assign({}, coreWords, dictionary);
 
-  // 预排序的词典 key 缓存（长词条优先），避免每次翻译重复 Object.keys/filter/sort
-  const sortedKeysAll = Object.keys(combinedDict).sort((a, b) => b.length - a.length);
-  const longKeysSorted = sortedKeysAll.filter(function (k) { return k.length >= 4; });
+  // ===== 外部词典热加载（借鉴 Zero-Touch 架构）=====
+  // 从 ~/.antigravity-zh/zh-CN.json 读外部词典，覆盖嵌入词典；文件变化时自动重载
+  let combinedDict, sortedKeysAll, longKeysSorted;
+  function rebuildDict() {
+    combinedDict = Object.assign({}, coreWords, dictionary);
+    sortedKeysAll = Object.keys(combinedDict).sort((a, b) => b.length - a.length);
+    longKeysSorted = sortedKeysAll.filter(function (k) { return k.length >= 4; });
+  }
+  rebuildDict();
+
+  function loadExternalDict() {
+    try {
+      const fs = require('fs');
+      const os = require('os');
+      const path = require('path');
+      const extPath = path.join(os.homedir(), '.antigravity-zh', 'zh-CN.json');
+      if (!fs.existsSync(extPath)) return;
+      const raw = fs.readFileSync(extPath, 'utf-8');
+      const ext = JSON.parse(raw);
+      const items = ext.translations || ext;
+      let added = 0;
+      for (const k in items) {
+        if (k.startsWith('__')) continue;
+        dictionary[k] = items[k]; // 外部词典覆盖嵌入词典
+        added++;
+      }
+      if (added > 0) {
+        rebuildDict();
+        console.log('[Antigravity-ZH] 外部词典已加载 ' + added + ' 条，总计 ' + Object.keys(dictionary).length + ' 条');
+        // 重新翻译当前页面
+        if (document.body) translateNode(document.body);
+      }
+    } catch (e) {
+      // sandbox 或权限不足时静默失败，用嵌入词典
+    }
+  }
+  loadExternalDict();
+
+  // 监听外部词典文件变化，热重载
+  try {
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const extPath = path.join(os.homedir(), '.antigravity-zh', 'zh-CN.json');
+    if (fs.existsSync(extPath)) {
+      fs.watch(extPath, { persistent: false }, function () {
+        setTimeout(loadExternalDict, 200); // 防抖：等文件写入完成
+      });
+    }
+  } catch (e) {}
 
   const escapeRegExp = (str) => {
     const specials = ['[', ']', '(', ')', '{', '}', '*', '+', '?', '.', '^', '$', '|', '\\'];

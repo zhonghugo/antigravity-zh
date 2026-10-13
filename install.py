@@ -472,6 +472,15 @@ def cmd_install(asar_path, resources_dir):
 
     print("[DONE] 汉化注入完成，请启动 Antigravity 查看效果。")
 
+    # 7. 复制词典到外部目录（支持热重载：改 ~/.antigravity-zh/zh-CN.json 即时生效）
+    ext_dir = os.path.join(os.path.expanduser("~"), ".antigravity-zh")
+    os.makedirs(ext_dir, exist_ok=True)
+    ext_dict = os.path.join(ext_dir, "zh-CN.json")
+    src_dict = os.path.join(HERE, "dicts", "zh_cn.json")
+    if os.path.exists(src_dict):
+        shutil.copy2(src_dict, ext_dict)
+        print("[OK] 外部词典已复制到 %s（可编辑此文件即时热重载）" % ext_dict)
+
 
 def cmd_restore(asar_path, resources_dir):
     bak = asar_path + ".bak"

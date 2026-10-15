@@ -627,7 +627,15 @@
     [/^showing\s+(\d+)\s+of\s+(\d+)$/i, '已显示 $1 / $2'],
     [/^Fold lines\s+(\d+)\s*-\s*(\d+)$/i, '折叠第 $1-$2 行'],
     [/^Run command:\s*(.+)$/i, '执行命令：$1'],
-    [/^Remove\s+(.{1,40})$/i, '移除 $1']
+    [/^Remove\s+(.{1,40})$/i, '移除 $1'],
+    // --- 吸收自 AntigravityCN 项目 ---
+    [/^Thinking\s*\((.+)\)$/i, '正在思考（$1）'],
+    [/^(\d+)\s+searches?$/i, '$1 次搜索'],
+    [/^(\d+(?:\.\d+)?%?)\s+remaining$/i, '$1 剩余'],
+    [/^(\d+)\s+hours?\s+(\d+)\s+minutes?$/i, '$1 小时 $2 分钟'],
+    [/^(\d+)\s+minutes?$/i, '$1 分钟'],
+    [/^(\d+)\s+hours?$/i, '$1 小时'],
+    [/^(\d+)\s+days?$/i, '$1 天']
   ];
 
   function translateString(text) {

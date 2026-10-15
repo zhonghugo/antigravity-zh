@@ -9,7 +9,7 @@
 ## ✨ 特性
 
 - **零外部依赖**：纯 Python 标准库，`python3 install.py` 即装即用
-- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**5626 条词条 + 动态正则规则**）
+- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**5982 条词条 + 动态正则规则**）
 - **原生菜单 / 托盘翻译**：顶部菜单栏（File/Edit/View…）与系统托盘菜单一并汉化
 - **原生弹窗 / 加载画面**：退出确认弹窗、启动加载画面等主进程原生 UI 一并汉化
 - **跨平台**：macOS / Windows / Linux 自动探测安装路径
@@ -43,7 +43,7 @@ python3 install.py --status
 
 1. 解包 `app.asar`
 2. 向 `dist/preload.js` 与 `dist/ideInstall/wizardPreload.js` 注入 DOM 翻译引擎
-   （MutationObserver 实时监听 + 5626 条中英词典，属性/placeholder/title 一并翻译）
+   （MutationObserver 实时监听 + 5982 条中英词典，属性/placeholder/title 一并翻译）
 3. 向 `dist/menu.js` 注入原生菜单翻译、`dist/tray.js` 注入托盘菜单翻译
 4. 向 `dist/main.js` 注入退出确认弹窗翻译、`dist/loadingOverlay.js` 注入启动加载画面翻译
 5. 重新打包（`chrome-devtools-mcp` 保持 unpacked，不影响功能）
@@ -56,7 +56,7 @@ antigravity-zh/
 ├── install.py          # 主安装器（安装/还原/状态）
 ├── asar.py             # 纯 Python asar 解包/打包库
 ├── dicts/
-│   ├── zh_cn.json      # 5626 条全量翻译词典
+│   ├── zh_cn.json      # 5982 条全量翻译词典
 │   └── engine.js       # DOM 翻译引擎模板（含 __DICT_ITEMS__ 占位符与动态正则规则）
 ├── SKILL.md            # AI 智能体技能说明（可直接作为豆包工作 Skill 使用）
 └── LICENSE             # MIT
@@ -66,10 +66,11 @@ antigravity-zh/
 
 ### v1.3.0（2026-10-13）
 
-* 词典：1855 → 5626 条。系统性对比 6 个社区汉化项目（Antigravity-Chinese-Localization、
+* 词典：1855 → 5982 条。系统性对比 7 个社区汉化项目（Antigravity-Chinese-Localization、
   Antigravity-Hans、Antigravity-zh-CN、antigravity-chinese、antigravity-chinese-locale、
-  antigravity-chinese-Zero-Touch），合并其词典精华并统一术语（工件/审查/沙箱/分叉/
-  自定义扩展/额度/智能体），过滤 URL、占位符不匹配与超长条目
+  antigravity-chinese-Zero-Touch、AntigravityCN），合并其词典精华并统一术语
+  （工件/审查/沙箱/分叉/自定义扩展/额度/智能体），过滤 URL、占位符不匹配、
+  超长条目与污染 key（AntigravityCN 有 61 条 key 被其引擎部分翻译后存回词典的中英混合串）
 * 引擎新增动态正则规则层（dynamicRules）：约 100 条整串锚定规则，覆盖 N 前/重置倒计时、
   配额提示、日期时间（Jan 5 - Mar 10、10:30 AM）、永久删除确认、快捷键提示、
   分屏/终端/模型选择等动态文案；在词典精确匹配之后执行，不劫持已校对词条
@@ -78,6 +79,8 @@ antigravity-zh/
   消除 "Failed to run" → "已失败 to 运行" 式中英夹杂
 * 吸收 Zero-Touch 项目补充规则：`5m ago` 紧凑时间、`showing X of Y`、`Fold lines`、
   `Run command: X`、`Load older messages` 等；`Close (Esc)` 等缺失词条
+* 吸收 AntigravityCN 项目补充规则：`Thinking (X)`、`N searches`、`N% remaining`、
+  纯数量短语（`45 minutes` / `3 days`）等；补齐 Hourly/Daily Limit 剩余额度等缺失词条
 * 修复：统一「子代理」→「子智能体」（保留网络代理 Proxy 语义的 15 条不受影响）
 * 修复（重要）：install.py 旧格式引擎升级时会产生**重复引擎块**——旧引擎在前先翻译，
   新词典永不生效。现改为从第一个引擎起点到文件尾整体重建，历史重复块一并清除

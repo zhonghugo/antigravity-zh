@@ -635,7 +635,14 @@
     [/^(\d+)\s+hours?\s+(\d+)\s+minutes?$/i, '$1 小时 $2 分钟'],
     [/^(\d+)\s+minutes?$/i, '$1 分钟'],
     [/^(\d+)\s+hours?$/i, '$1 小时'],
-    [/^(\d+)\s+days?$/i, '$1 天']
+    [/^(\d+)\s+days?$/i, '$1 天'],
+    // --- 权限确认弹窗按钮（插入命令后的动态形式）---
+    [/^Yes, and always allow '([\s\S]+)' in this conversation$/i, '是，且在此对话中始终允许 \'$1\''],
+    [/^Yes, and always allow '([\s\S]+)' in this project$/i, '是，且在此项目中始终允许 \'$1\''],
+    [/^Yes, and always allow '([\s\S]+)' when not in a project$/i, '是，且在非项目时始终允许 \'$1\''],
+    [/^Yes, and always allow '([\s\S]+)'$/i, '是，且始终允许 \'$1\''],
+    [/^Yes, allow '([\s\S]+)' this time$/i, '是，仅允许本次执行 \'$1\''],
+    [/^Yes, allow '([\s\S]+)'$/i, '是，允许 \'$1\'']
   ];
 
   function translateString(text) {

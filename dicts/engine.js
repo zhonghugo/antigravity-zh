@@ -898,6 +898,25 @@
         }
       }
 
+      // 4b2. 思考链/模型回复正文：模型生成的自由文本不逐词翻译（无法整句翻译时保持英文，
+      //      避免中英夹杂的破碎译文）。「已思考 X 秒」触发药丸是系统 UI，放行汉化。
+      if (cur.getAttribute) {
+        const testId = cur.getAttribute('data-testid');
+        if (testId === 'thinking-collapsible-trigger' ||
+            testId === 'worked-for-collapsible' ||
+            testId === 'tool-group-collapsible') {
+          break;
+        }
+        if (testId === 'thinking-collapsible' ||
+            testId === 'planner-response-text' ||
+            testId === 'artifact-view') {
+          return true;
+        }
+      }
+      if (cur.classList && cur.classList.contains('cursor-edit')) {
+        return true;
+      }
+
       // 4c. 检查 role 属性
       if (cur.getAttribute) {
         const role = cur.getAttribute('role');

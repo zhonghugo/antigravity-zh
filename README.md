@@ -64,6 +64,15 @@ antigravity-zh/
 
 ## 📝 更新日志
 
+### v1.3.1（2026-10-21）
+
+* 思考链正文保持英文：`thinking-collapsible` / `planner-response-text` / `artifact-view`
+  容器与 `.cursor-edit` 编辑预览整块跳过翻译——模型生成的自由文本不逐词硬翻，
+  无法整句翻译时保持英文原样，避免中英夹杂；「已思考 X 秒」触发药丸是系统 UI，放行汉化
+* 修复：`fmtDuration` 相邻单位间缺空格（`1 小时2 分` → `1 小时 2 分`），
+  `Worked for` / `Thought for` 动态块改走 `fmtDuration`，支持 `1d2h3m4.5s` 混合单位
+* 修复：`Permanently delete ...` 尾部 ASCII 句点未转全角（`永久删除 Old Tasks.` → `永久删除 Old Tasks。`）
+
 ### v1.3.0（2026-10-13）
 
 * 词典：1855 → 5982 条。系统性对比 7 个社区汉化项目（Antigravity-Chinese-Localization、

@@ -1900,7 +1900,7 @@
   "Execute an MCP tool call": "执行 MCP 工具调用",
   "Execute dart analyze to identify warnings and errors, and use dart fix --apply to automatically resolve mechanical lint issues. Use during development to ensure code quality and before committing changes.": "执行 dart analyze 识别警告与错误，并使用 dart fix --apply 自动修复机械性 Lint 问题。适用于开发过程中保障代码质量及提交变更前的检查。",
   "Executed": "已执行",
-  "Executing": "正在执行",
+  "Executing": "执行中",
   "Executing command...": "正在执行命令...",
   "Execution": "执行",
   "Execution Environment": "执行环境",
@@ -5980,5 +5980,12 @@
   "≥ 5m": "≥ 5m",
   "≥ 5s": "≥ 5s",
   "⚠️ Warning: \"Always Proceed\" is enabled without sandbox protection.": "⚠️ 警告：“总是直接继续”在无沙箱保护的情况下已启用。",
-  "⚠️ Warning: \"Always Proceed\" is enabled without sandbox protection. This is very dangerous and we do not recommend doing this.": "⚠️ 警告：“总是直接继续”在无沙箱保护的情况下已启用。这非常危险，我们不建议这样做。"
+  "⚠️ Warning: \"Always Proceed\" is enabled without sandbox protection. This is very dangerous and we do not recommend doing this.": "⚠️ 警告：“总是直接继续”在无沙箱保护的情况下已启用。这非常危险，我们不建议这样做。",
+  "Allow always": "始终允许",
+  "Ask for review before running terminal commands": "运行终端命令前请求审查",
+  "Failed to connect to the language server": "无法连接到语言服务器",
+  "Failed to run": "运行失败",
+  "Having trouble signing in?": "登录遇到问题？",
+  "Use enterprise account": "使用企业账号",
+  "Sign in": "登录"
 }

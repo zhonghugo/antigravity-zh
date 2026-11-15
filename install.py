@@ -284,25 +284,156 @@ def patch_quit_dialog(tmp):
 
 
 def patch_loading_overlay(tmp):
-    """汉化启动加载画面（loadingOverlay.js：翻译引擎启动前显示）。"""
+    """汉化启动加载画面（loadingOverlay.js：翻译引擎启动前显示）。
+
+    2.32.x 起官方把加载画面精简为「只有 LOGO、没有文字」，此时无内容可译，
+    脚本应如实报告而不是报「钩子未匹配」误导用户。
+    对仍带文字的旧版本，同时兼容 <div class="text"> 与裸文本两种写法。
+    """
     overlay_path = os.path.join(tmp, "dist", "loadingOverlay.js")
     if not os.path.exists(overlay_path):
-        print("[!] loadingOverlay.js 不存在，跳过加载画面翻译")
+        print("[*] loadingOverlay.js 不存在，此版本无独立加载画面")
         return
     with open(overlay_path, "r", encoding="utf-8") as f:
         content = f.read()
     if "AG_ZH_LOADING" in content:
         print("[*] loadingOverlay.js 已注入加载画面翻译，跳过")
         return
-    old = '<div class="text">Loading Antigravity</div>'
-    new = '<div class="text">正在加载 Antigravity</div> <!-- AG_ZH_LOADING -->'
-    if old in content:
-        content = content.replace(old, new)
-        with open(overlay_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        print("[OK] 注入 加载画面翻译: loadingOverlay.js")
-    else:
-        print("[!] loadingOverlay.js 钩子未匹配，跳过")
+
+    # 该版本加载画面是否压根没有文字
+    has_text = "Loading Antigravity" in content
+    if not has_text:
+        print("[OK] 加载画面无需汉化（当前版本仅有 LOGO，无文字）")
+        return
+
+    # 兼容多种写法：带 div 包裹 / 直接出现
+    candidates = [
+        ('<div class="text">Loading Antigravity</div>',
+         '<div class="text">正在加载 Antigravity</div> <!-- AG_ZH_LOADING -->'),
+        ('Loading Antigravity',
+         '正在加载 Antigravity <!-- AG_ZH_LOADING -->'),
+    ]
+    for old, new in candidates:
+        if old in content:
+            content = content.replace(old, new, 1)
+            with open(overlay_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            print("[OK] 注入 加载画面翻译: loadingOverlay.js")
+            return
+    print("[*] 加载画面文案已变化，未匹配（不影响使用）")
+
+
+# ---------------------------------------------------------------- 词典热重载桥
+# Antigravity 的 preload 运行在 sandbox:true 环境中，渲染进程拿不到 require('fs')，
+# 所以引擎无法自己读 ~/.antigravity-zh/zh-CN.json，fs.watch 也永远不会注册。
+# 这里在主进程装一座桥：读文件 + 监听变化 + 通过 IPC 把全量词典推给所有窗口。
+DICT_BRIDGE_CODE = r"""
+// ==== AG_ZH_DICT_BRIDGE ==== 外部词典热重载（主进程侧）
+(function () {
+  try {
+    const _fs = require('fs');
+    const _os = require('os');
+    const _path = require('path');
+    const _electron = require('electron');
+    const dictPath = _path.join(_os.homedir(), '.antigravity-zh', 'zh-CN.json');
+
+    function readDict() {
+      try {
+        if (!_fs.existsSync(dictPath)) return null;
+        const ext = JSON.parse(_fs.readFileSync(dictPath, 'utf-8'));
+        return ext.translations || ext;
+      } catch (e) { return null; }
+    }
+
+    // 收集所有可达的 webContents：
+    // Antigravity 主界面跑在 WebContentsView 里，BrowserWindow.getAllWindows()
+    // 拿不到它（会返回 0 个窗口），必须从 webContents 层面广播。
+    function allWebContents() {
+      const list = [];
+      const seen = new Set();
+      function add(wc) {
+        if (!wc || seen.has(wc.id)) return;
+        seen.add(wc.id);
+        list.push(wc);
+      }
+      try { _electron.webContents.getAllWebContents().forEach(add); } catch (e) {}
+      try { _electron.BrowserWindow.getAllWindows().forEach(function (w) { add(w.webContents); }); } catch (e) {}
+      // 兜底：遍历各窗口的 contentView 子视图（WebContentsView）
+      try {
+        _electron.BrowserWindow.getAllWindows().forEach(function (w) {
+          try {
+            const kids = w.contentView && w.contentView.children ? w.contentView.children : [];
+            kids.forEach(function (v) {
+              try { if (v.webContents) add(v.webContents); } catch (e) {}
+            });
+          } catch (e) {}
+        });
+      } catch (e) {}
+      return list;
+    }
+
+    function pushToAllWindows() {
+      const items = readDict();
+      if (!items) return;
+      const n = Object.keys(items).length;
+      try {
+        const targets = allWebContents();
+        let sent = 0;
+        for (const wc of targets) {
+          try {
+            if (wc.isDestroyed && wc.isDestroyed()) continue;
+            wc.send('antigravity-zh:dict', items);
+            sent++;
+          } catch (e) {}
+        }
+        console.log('[Antigravity-ZH] 词典热重载已推送 ' + n + ' 条到 ' + sent + ' 个 webContents');
+      } catch (e) {}
+    }
+
+    // 渲染进程就绪后主动索取
+    try {
+      _electron.ipcMain.on('antigravity-zh:ready', function (evt) {
+        const items = readDict();
+        if (!items) return;
+        try { evt.sender.send('antigravity-zh:dict', items); } catch (e) {}
+      });
+    } catch (e) {}
+
+    // 监听外部词典文件变化（watchFile 比 watch 更稳，跨编辑器保存方式）
+    try {
+      if (_fs.existsSync(dictPath)) {
+        let last = 0;
+        _fs.watchFile(dictPath, { interval: 800 }, function (cur) {
+          const t = cur.mtimeMs || 0;
+          if (t === last) return;
+          last = t;
+          setTimeout(pushToAllWindows, 200); // 等编辑器写完
+        });
+        console.log('[Antigravity-ZH] 词典热重载已启用: ' + dictPath);
+      }
+    } catch (e) {}
+  } catch (e) {}
+})();
+// ==== /AG_ZH_DICT_BRIDGE ====
+"""
+
+
+def patch_dict_bridge(tmp):
+    """在主进程 main.js 注入词典热重载桥（preload 沙箱环境下唯一可行通道）。"""
+    main_path = os.path.join(tmp, "dist", "main.js")
+    if not os.path.exists(main_path):
+        print("[!] main.js 不存在，跳过词典热重载桥")
+        return
+    with open(main_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    if "AG_ZH_DICT_BRIDGE" in content:
+        print("[*] main.js 已注入词典热重载桥，跳过")
+        return
+    # 追加在文件尾部：main.js 顶部 require 已完成，此处执行时 electron 可用
+    content = content.rstrip() + chr(10) + chr(10) + DICT_BRIDGE_CODE + chr(10)
+    with open(main_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    print("[OK] 注入 词典热重载桥: main.js")
 
 
 MENU_TRANSLATION_CODE = r"""
@@ -405,6 +536,7 @@ def cmd_install(asar_path, resources_dir):
     patch_native_menu(tmp)
     patch_tray(tmp)
     patch_quit_dialog(tmp)
+    patch_dict_bridge(tmp)
     patch_loading_overlay(tmp)
 
     # 4. 重打包

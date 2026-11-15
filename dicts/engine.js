@@ -410,46 +410,69 @@
   }
   rebuildDict();
 
-  function loadExternalDict() {
+  // ===== 外部词典应用（合并 + 全量重译）=====
+  function applyExternalItems(items, fromBridge) {
+    if (!items) return 0;
+    let added = 0;
+    for (const k in items) {
+      if (k.startsWith('__')) continue;
+      dictionary[k] = items[k]; // 外部词典覆盖嵌入词典
+      added++;
+    }
+    if (added > 0) {
+      rebuildDict();
+      console.log('[Antigravity-ZH] 外部词典已加载 ' + added + ' 条，总计 ' +
+                  Object.keys(dictionary).length + ' 条' + (fromBridge ? ' (IPC)' : ' (fs)'));
+      retranslateAll();
+    }
+    return added;
+  }
+
+  // 直接读文件：仅在 preload 未沙箱化时可用。
+  // 注意：Antigravity 的 preload 是 sandbox:true，这里 require('fs') 会失败，
+  // 必须走下面的主进程 IPC 通道，否则热重载永远不生效。
+  function loadExternalDictViaFs() {
     try {
       const fs = require('fs');
       const os = require('os');
       const path = require('path');
       const extPath = path.join(os.homedir(), '.antigravity-zh', 'zh-CN.json');
-      if (!fs.existsSync(extPath)) return;
-      const raw = fs.readFileSync(extPath, 'utf-8');
-      const ext = JSON.parse(raw);
-      const items = ext.translations || ext;
-      let added = 0;
-      for (const k in items) {
-        if (k.startsWith('__')) continue;
-        dictionary[k] = items[k]; // 外部词典覆盖嵌入词典
-        added++;
-      }
-      if (added > 0) {
-        rebuildDict();
-        console.log('[Antigravity-ZH] 外部词典已加载 ' + added + ' 条，总计 ' + Object.keys(dictionary).length + ' 条');
-        // 重新翻译当前页面
-        if (document.body) translateNode(document.body);
-      }
-    } catch (e) {
-      // sandbox 或权限不足时静默失败，用嵌入词典
+      if (!fs.existsSync(extPath)) return false;
+      const ext = JSON.parse(fs.readFileSync(extPath, 'utf-8'));
+      applyExternalItems(ext.translations || ext, false);
+      try {
+        fs.watch(extPath, { persistent: false }, function () {
+          setTimeout(loadExternalDictViaFs, 200);
+        });
+      } catch (e2) {}
+      return true;
+    } catch (e3) {
+      return false; // 沙箱环境，交给 IPC 通道
     }
   }
-  loadExternalDict();
 
-  // 监听外部词典文件变化，热重载
-  try {
-    const fs = require('fs');
-    const os = require('os');
-    const path = require('path');
-    const extPath = path.join(os.homedir(), '.antigravity-zh', 'zh-CN.json');
-    if (fs.existsSync(extPath)) {
-      fs.watch(extPath, { persistent: false }, function () {
-        setTimeout(loadExternalDict, 200); // 防抖：等文件写入完成
+  // 主进程 IPC 通道：main.js 里的 AG_ZH_DICT_BRIDGE 负责读文件与 watchFile，
+  // 通过 'antigravity-zh:dict' 把全量词典推给渲染进程。
+  function loadExternalDictViaIpc() {
+    try {
+      const electron = require('electron');
+      const ipcRenderer = electron && electron.ipcRenderer;
+      if (!ipcRenderer) return false;
+      ipcRenderer.on('antigravity-zh:dict', function (_evt, items) {
+        applyExternalItems(items, true);
       });
+      try { ipcRenderer.send('antigravity-zh:ready'); } catch (e4) {}
+      return true;
+    } catch (e5) {
+      return false; // 极旧版本或非 Electron 环境
     }
-  } catch (e) {}
+  }
+
+  if (!loadExternalDictViaFs()) {
+    if (!loadExternalDictViaIpc()) {
+      console.log('[Antigravity-ZH] 外部词典通道不可用，仅使用嵌入词典');
+    }
+  }
 
   const escapeRegExp = (str) => {
     const specials = ['[', ']', '(', ')', '{', '}', '*', '+', '?', '.', '^', '$', '|', '\\'];
@@ -649,6 +672,14 @@
     if (!text) return text;
     const trimmed = text.trim();
     if (!trimmed) return text;
+
+    // --- 斜杠命令保护：/goal、/browser、/plan 等必须原样保留 ---
+    // 短文本分支会把 "/goal" 里的 goal 当成单词翻译成"目标"，
+    // 使 /目标 变成一个不存在的命令（点击后无反应）。含 / 且紧跟英文标识符
+    // 的整串一律不翻译；" / 执行操作" 这类以空格分隔的提示文案不受影响。
+    if (/^\/[A-Za-z][\w-]*$/.test(trimmed)) {
+      return text;
+    }
 
     // --- 纯标点节点：独立渲染的英文标点转中文标点（如 DOM 拆分的 "?" 节点）---
     if (/^[?.!,;:]+$/.test(trimmed)) {
@@ -958,6 +989,63 @@
     return false;
   }
 
+  // ===== 原文记忆：热重载时用原始英文重新翻译，否则已译文本无法再被更新 =====
+  const ORIG_ATTR_PREFIX = 'data-agzh-orig-';
+  const ATTRIBUTE_LIST = ['placeholder', 'title', 'aria-label', 'value'];
+
+  function rememberOrig(el, attr, original) {
+    try {
+      if (!el.getAttribute || el.getAttribute(ORIG_ATTR_PREFIX + attr) !== null) return false;
+      el.setAttribute(ORIG_ATTR_PREFIX + attr, original);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  // 全量重译：把所有曾翻译过的节点用【原文】重新算一遍。
+  // 这是热重载的核心——已渲染节点不重扫就永远保持旧译文。
+  let retranslateScheduled = false;
+  function retranslateAll() {
+    if (retranslateScheduled) return;
+    retranslateScheduled = true;
+    setTimeout(function () {
+      retranslateScheduled = false;
+      try {
+        if (!document.body) return;
+        // 1) 文本节点：用保存的原文重译
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+        let n;
+        while ((n = walker.nextNode())) {
+          if (shouldSkipNode(n)) continue;
+          let orig = n.__agzhOrig;
+          if (orig === undefined) continue; // 从未翻译过，交给常规流程
+          const out = translateString(orig);
+          try {
+            if (n.nodeValue !== out) n.nodeValue = out;
+          } catch (e) {}
+        }
+        // 2) 元素属性：用保存的原文重译
+        const all = document.body.querySelectorAll('*');
+        for (let i = 0; i < all.length; i++) {
+          const el = all[i];
+          for (let a = 0; a < ATTRIBUTE_LIST.length; a++) {
+            const attr = ATTRIBUTE_LIST[a];
+            let orig = null;
+            try { orig = el.getAttribute(ORIG_ATTR_PREFIX + attr); } catch (e) {}
+            if (orig === null) continue;
+            const out = translateString(orig);
+            if (out !== orig) {
+              try {
+                if (attr === 'value' && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) continue;
+                el.setAttribute(attr, out);
+              } catch (e) {}
+            }
+          }
+        }
+        console.log('[Antigravity-ZH] 已按新词典重新翻译当前页面');
+      } catch (e) {}
+    }, 60);
+  }
+
   function translateNode(node) {
     if (!node) return;
     if (shouldSkipNode(node)) return;
@@ -966,10 +1054,12 @@
       const original = node.nodeValue;
       const translated = translateString(original);
       if (original !== translated) {
+        // 记住原文，供热重载重译；已被翻译过的节点不再覆盖记忆
+        if (node.__agzhOrig === undefined) node.__agzhOrig = original;
         node.nodeValue = translated;
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
-      ['placeholder', 'title', 'aria-label', 'value'].forEach(attr => {
+      ATTRIBUTE_LIST.forEach(attr => {
         if (node.hasAttribute && node.hasAttribute(attr)) {
           // 双重锁死：绝对不翻译任何输入框或编辑区的用户 value 属性
           if (attr === 'value' && (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA')) {
@@ -979,6 +1069,7 @@
           if (original && (node.tagName !== 'INPUT' || node.type === 'button' || node.type === 'submit' || attr !== 'value')) {
             const translated = translateString(original);
             if (original !== translated) {
+              rememberOrig(node, attr, original); // 记录原文
               node.setAttribute(attr, translated);
             }
           }
@@ -1024,6 +1115,7 @@
               const original = node.nodeValue;
               const translated = translateString(original);
               if (original !== translated) {
+                if (node.__agzhOrig === undefined) node.__agzhOrig = original;
                 node.nodeValue = translated;
               }
             }

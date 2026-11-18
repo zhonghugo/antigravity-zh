@@ -401,11 +401,26 @@
 
   // ===== 外部词典热加载（借鉴 Zero-Touch 架构）=====
   // 从 ~/.antigravity-zh/zh-CN.json 读外部词典，覆盖嵌入词典；文件变化时自动重载
-  let combinedDict, sortedKeysAll, longKeysSorted;
+  let combinedDict, dictionaryLowerIndex, longRules, shortRules;
   function rebuildDict() {
     combinedDict = Object.assign({}, coreWords, dictionary);
-    sortedKeysAll = Object.keys(combinedDict).sort((a, b) => b.length - a.length);
-    longKeysSorted = sortedKeysAll.filter(function (k) { return k.length >= 4; });
+    dictionaryLowerIndex = Object.create(null);
+    for (const key in dictionary) {
+      const lowerKey = key.toLowerCase();
+      if (!(lowerKey in dictionaryLowerIndex)) {
+        dictionaryLowerIndex[lowerKey] = key;
+      }
+    }
+    const sortedRules = Object.keys(combinedDict)
+      .sort((a, b) => b.length - a.length)
+      .map(key => ({
+        key,
+        // 保留非 ASCII 词条原有的正则大小写匹配语义。
+        literal: /^[\x00-\x7F]*$/.test(key) ? key.toLowerCase() : null,
+        pattern: null
+      }));
+    longRules = sortedRules.filter(rule => rule.key.length >= 4);
+    shortRules = sortedRules.filter(rule => rule.key.length > 3 || /^[a-zA-Z0-9]+$/.test(rule.key));
     rebuildLowerIndex();
   }
   rebuildDict();
@@ -455,6 +470,18 @@
     const specials = ['[', ']', '(', ')', '{', '}', '*', '+', '?', '.', '^', '$', '|', '\\'];
     return str.split('').map(c => specials.includes(c) ? '\\' + c : c).join('');
   };
+
+  function getReplacementPattern(rule, lowerText) {
+    if (rule.literal !== null && !lowerText.includes(rule.literal)) {
+      return null;
+    }
+    if (!rule.pattern) {
+      const start = /^[a-zA-Z0-9]/.test(rule.key) ? '(?<![A-Za-z0-9-])' : '';
+      const end = /[a-zA-Z0-9]$/.test(rule.key) ? '(?![A-Za-z0-9-])' : '';
+      rule.pattern = new RegExp(start + escapeRegExp(rule.key) + end, 'gi');
+    }
+    return rule.pattern;
+  }
 
   // 时长格式化：1d2h3m4.5s / 1d 2h 3m -> 1 天 2 小时 3 分 4.5 秒
   const fmtDuration = function (d) {
@@ -705,11 +732,9 @@
       return text.replace(trimmed, dictionary[trimmed]);
     }
     
-    const trimmedLower = trimmed.toLowerCase();
-    for (const key in dictionary) {
-      if (key.toLowerCase() === trimmedLower) {
-        return text.replace(trimmed, dictionary[key]);
-      }
+    const matchingKey = dictionaryLowerIndex[trimmed.toLowerCase()];
+    if (matchingKey !== undefined) {
+      return text.replace(trimmed, dictionary[matchingKey]);
     }
 
     // 2. Intelligent Punctuation Stripping & Reconstruction
@@ -741,12 +766,9 @@
     if (dictionary[core]) {
       coreTranslated = dictionary[core];
     } else {
-      const coreLower = core.toLowerCase();
-      for (const key in dictionary) {
-        if (key.toLowerCase() === coreLower) {
-          coreTranslated = dictionary[key];
-          break;
-        }
+      const matchingCore = dictionaryLowerIndex[core.toLowerCase()];
+      if (matchingCore !== undefined) {
+        coreTranslated = dictionary[matchingCore];
       }
     }
 
@@ -778,18 +800,19 @@
       let longTemp = core;
       let longReplaced = false;
       let longMatchedChars = 0;
-      const longKeys = longKeysSorted; // 预排序缓存（已过滤 >=4 字符）
-      for (var ki = 0; ki < longKeys.length; ki++) {
-        var lkey = longKeys[ki];
-        var lescaped = escapeRegExp(lkey);
-        var lstartBoundary = /^[a-zA-Z0-9]/.test(lkey) ? '(?<![A-Za-z0-9-])' : '';
-        var lendBoundary = /[a-zA-Z0-9]$/.test(lkey) ? '(?![A-Za-z0-9-])' : '';
-        var lregex = new RegExp(lstartBoundary + lescaped + lendBoundary, 'gi');
-        longTemp = longTemp.replace(lregex, function (m) {
-          longMatchedChars += (m.match(/[A-Za-z]/g) || []).length;
+      let lowerText = longTemp.toLowerCase();
+      for (const rule of longRules) {
+        const pattern = getReplacementPattern(rule, lowerText);
+        if (!pattern) continue;
+        const next = longTemp.replace(pattern, function (matched) {
+          longMatchedChars += (matched.match(/[A-Za-z]/g) || []).length;
           longReplaced = true;
-          return combinedDict[lkey];
+          return combinedDict[rule.key];
         });
+        if (next !== longTemp) {
+          longTemp = next;
+          lowerText = next.toLowerCase();
+        }
       }
       // 覆盖率门槛：命中英文字符占比过低，说明这是整段英文文案
       // （技能/插件描述、智能体回复等），逐词替换只会产生中英夹杂，保持原文
@@ -824,18 +847,18 @@
     }
     let temp = core;
     let replaced = false;
-    const sortedKeys = sortedKeysAll; // 预排序缓存
-    for (const key of sortedKeys) {
-      if (key.length <= 3 && !/^[a-zA-Z0-9]+$/.test(key)) continue;
-      const escapedKey = escapeRegExp(key);
-      // 连字符视为单词一部分（见上方长文本分支说明），防止复合词被拆词误翻
-      const startBoundary = /^[a-zA-Z0-9]/.test(key) ? '(?<![A-Za-z0-9-])' : '';
-      const endBoundary = /[a-zA-Z0-9]$/.test(key) ? '(?![A-Za-z0-9-])' : '';
-      const regex = new RegExp(startBoundary + escapedKey + endBoundary, 'gi');
-      temp = temp.replace(regex, function (m) {
+    let lowerText = temp.toLowerCase();
+    for (const rule of shortRules) {
+      const pattern = getReplacementPattern(rule, lowerText);
+      if (!pattern) continue;
+      const next = temp.replace(pattern, function () {
         replaced = true;
-        return combinedDict[key];
+        return combinedDict[rule.key];
       });
+      if (next !== temp) {
+        temp = next;
+        lowerText = next.toLowerCase();
+      }
     }
 
     let finalTranslated = replaced ? temp : core;

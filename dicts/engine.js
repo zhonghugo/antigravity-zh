@@ -392,7 +392,11 @@
   }
   // 小写索引：短文本全词校验用（随 rebuildDict 一并重建，热重载后保持生效）
   const lowerIndex = Object.create(null);
+  // 空白归一化索引：多行文案（含 \n / 制表符 / 缩进差异）与词典键逐字比较常失配，
+  // 归一化后仍可精确命中；只收录归一化后与原文不同的键，避免干扰正常匹配
+  const normIndex = Object.create(null);
   function rebuildLowerIndex() {
+    for (const q in lowerIndex) delete lowerIndex[q];
     for (const ck in combinedDict) {
       const clk = ck.toLowerCase();
       if (!(clk in lowerIndex)) lowerIndex[clk] = ck;
@@ -407,6 +411,11 @@
     sortedKeysAll = Object.keys(combinedDict).sort((a, b) => b.length - a.length);
     longKeysSorted = sortedKeysAll.filter(function (k) { return k.length >= 4; });
     rebuildLowerIndex();
+    for (const q in normIndex) delete normIndex[q];
+    for (const nk in combinedDict) {
+      const norm = nk.replace(/\s+/g, ' ').trim();
+      if (norm && norm !== nk && !(norm in normIndex)) normIndex[norm] = combinedDict[nk];
+    }
   }
   rebuildDict();
 
@@ -467,6 +476,46 @@
   };
   const MONTH_CN = { jan: '1月', feb: '2月', mar: '3月', apr: '4月', may: '5月', jun: '6月', jul: '7月', aug: '8月', sep: '9月', oct: '10月', nov: '11月', dec: '12月' };
   const meridiem = function (ap) { return ap.toUpperCase() === 'PM' ? '下午' : '上午'; };
+  // "November 30, 2026" -> "2026年11月30日"；无法识别时原样返回
+  const fmtDateEn = function (s) {
+    const m = /^([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s*(\d{4})$/.exec(String(s).trim());
+    const k = m && MONTH_CN[m[1].slice(0, 3).toLowerCase()];
+    return k ? m[3] + '年' + k + m[2] + '日' : String(s).trim();
+  };
+  // 长句局部的英文日期（整句已汉化但日期残留英文时使用）
+  const localizeEnDates = function (s) {
+    return s
+      .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2}),\s*(\d{4})\b/gi, function (m, mo, d, y) {
+        const k = MONTH_CN[mo.slice(0, 3).toLowerCase()];
+        return k ? y + '年' + k + d + '日' : m;
+      })
+      .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2})\b/gi, function (m, mo, d) {
+        const k = MONTH_CN[mo.slice(0, 3).toLowerCase()];
+        return k ? k + d + '日' : m;
+      });
+  };
+  // 破碎译文检测：逐段替换后若仍有英文虚词夹在中英之间
+  //（如 "权限 will 不再"、"可用 on your 当前"），说明整句并未真正译出，
+  // 此时保持英文原文，避免中英夹杂。首字母大写视为专有名词（Build With Google / Chief of Staff）放行。
+  const GLUE_WORDS = new Set(['will', 'would', 'be', 'is', 'are', 'was', 'were', 'been', 'being', 'your', 'you', 'our', 'their', 'they', 'them', 'has', 'have', 'had', 'does', 'did', 'can', 'could', 'should', 'must', 'may', 'might', 'this', 'that', 'these', 'those', 'the', 'a', 'an', 'and', 'or', 'but', 'not', 'no', 'to', 'of', 'for', 'with', 'from', 'by', 'as', 'at', 'in', 'on', 'if', 'when', 'while', 'it', 'its', 'we', 'us', 'i', 'please']);
+  const isCapitalized = function (w) { return /^[A-Z0-9]/.test(w); };
+  const hasBrokenEnglish = function (out) {
+    if (/[一-龥]\s+on\s+[A-Z][a-z]+\s+\d{1,2},?\s*\d{4}/.test(out)) return true;
+    const runs = out.match(/[A-Za-z][A-Za-z'’]*(?:\s+[A-Za-z0-9][A-Za-z0-9'’.,-]*)*/g);
+    if (!runs) return false;
+    for (let r = 0; r < runs.length; r++) {
+      const toks = runs[r].replace(/[.,]+$/, '').split(/\s+/);
+      for (let i = 0; i < toks.length; i++) {
+        const raw = toks[i];
+        if (raw !== raw.toLowerCase()) continue; // 大写开头：专有名词
+        if (!GLUE_WORDS.has(raw)) continue;
+        const prev = i > 0 ? toks[i - 1] : '';
+        const next = i < toks.length - 1 ? toks[i + 1] : '';
+        if ((!prev || !isCapitalized(prev)) && (!next || !isCapitalized(next))) return true;
+      }
+    }
+    return false;
+  };
   // 动态正则规则（参考社区汉化项目沉淀，整串锚定匹配；在词典精确匹配之后执行）
   const dynamicRules = [
     [/^(\d+)\s*(?:seconds?|secs?)\s+ago$/i, '$1 秒前'],
@@ -496,10 +545,10 @@
     [/^Ran (\d+) commands?$/i, '已运行 $1 个命令'],
     [/^Thinking for (\d+)s$/i, '已思考 $1 秒'],
     [/^Stopped after (\d+) steps?$/i, '已在 $1 步后停止'],
-    [/^You have used some of your weekly limit,?\s*it will fully refresh in (.*?)\.?$/i, '您已消耗了部分每周额度，将在 $1 后完全重置刷新。'],
-    [/^You have used some of your 5-?hour limit,?\s*it will fully refresh in (.*?)\.?$/i, '您已消耗了部分 5 小时额度，将在 $1 后完全重置刷新。'],
-    [/^You have hit your 5-?hour limit,?\s*it will refresh in (.*?)\.?$/i, '您已达到 5 小时上限，将在 $1 后重置刷新。'],
-    [/^You have hit your weekly limit,?\s*it will refresh in (.*?)\.?$/i, '您已达到每周上限，将在 $1 后重置刷新。'],
+    [/^You have used some of your weekly limit,?\s*it will fully refresh in (.*?)\.?$/i, function (m, d) { return '您已消耗了部分每周额度，将在 ' + fmtDuration(d) + ' 后完全重置刷新。'; }],
+    [/^You have used some of your 5-?hour limit,?\s*it will fully refresh in (.*?)\.?$/i, function (m, d) { return '您已消耗了部分 5 小时额度，将在 ' + fmtDuration(d) + ' 后完全重置刷新。'; }],
+    [/^You have hit your 5-?hour limit,?\s*it will refresh in (.*?)\.?$/i, function (m, d) { return '您已达到 5 小时上限，将在 ' + fmtDuration(d) + ' 后重置刷新。'; }],
+    [/^You have hit your weekly limit,?\s*it will refresh in (.*?)\.?$/i, function (m, d) { return '您已达到每周上限，将在 ' + fmtDuration(d) + ' 后重置刷新。'; }],
     [/^Your quota for this model is running low\.?$/i, '您在此模型上的剩余配额即将耗尽。'],
     [/^Your quota for this model has run out\.?$/i, '您在此模型上的配额已耗尽。'],
     [/^Your plan's baseline quota will refresh on (.+?)\.?\s*You can upgrade to a Google AI Ultra plan to receive higher rate limits\.?$/i, '您的套餐基础配额将于 $1 重置刷新。您可以升级至 Google AI Ultra 以获取更高的请求配额与速率上限。'],
@@ -621,6 +670,25 @@
     [/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s*(\d{4})$/i, function (m, mo, d, y) { return y + '年' + MONTH_CN[mo.toLowerCase()] + d + '日'; }],
     [/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})$/i, function (m, mo, d) { return MONTH_CN[mo.toLowerCase()] + d + '日'; }],
     [/^(\d{1,2}:\d{2}(?::\d{2})?)\s*(AM|PM)$/i, function (m, t, ap) { return meridiem(ap) + ' ' + t; }],
+    // --- 模型升级通知：模型名与生效日期都是动态值，不能写死成词条 ---
+    [/^(.+?) is now available (?:in|on) paid Pro and Ultra plans\.?\s*Third-?party model access will no longer be available on your current plan starting on (.+?)\.?$/i, function (m, model, date) {
+      return model + ' 现已在付费 Pro 和 Ultra 套餐中推出。自 ' + fmtDateEn(date) + ' 起，您当前套餐将不再提供第三方模型访问权限。';
+    }],
+    [/^(.+?) is now available (?:in|on) paid Pro and Ultra plans\.?\s*Third-?party model access will no longer be available on your current plan\.?$/i, function (m, model) {
+      return model + ' 现已在付费 Pro 和 Ultra 套餐中推出。您当前套餐将不再提供第三方模型访问权限。';
+    }],
+    [/^(.+?) is now available (?:in|on) paid Pro and Ultra plans\.?$/i, '$1 现已在付费 Pro 和 Ultra 套餐中推出。'],
+    // 模型名被 DOM 拆成独立节点时，剩余文本以 "is now available..." 开头
+    [/^[Ii]s now available (?:in|on) paid Pro and Ultra plans\.?\s*Third-?party model access will no longer be available on your current plan starting on (.+?)\.?$/i, function (m, date) {
+      return '现已在付费 Pro 和 Ultra 套餐中推出。自 ' + fmtDateEn(date) + ' 起，您当前套餐将不再提供第三方模型访问权限。';
+    }],
+    [/^[Ii]s now available (?:in|on) paid Pro and Ultra plans\.?\s*Third-?party model access will no longer be available on your current plan\.?$/i, '现已在付费 Pro 和 Ultra 套餐中推出。您当前套餐将不再提供第三方模型访问权限。'],
+    [/^[Ii]s now available (?:in|on) paid Pro and Ultra plans\.?$/i, '现已在付费 Pro 和 Ultra 套餐中推出。'],
+    [/^Third-?party model access will no longer be available on your current plan starting on (.+?)\.?$/i, function (m, date) {
+      return '自 ' + fmtDateEn(date) + ' 起，您当前套餐将不再提供第三方模型访问权限。';
+    }],
+    [/^Third-?party model access will no longer be available on your current plan\.?$/i, '您当前套餐将不再提供第三方模型访问权限。'],
+    [/^[Ss]tarting on ([A-Za-z]{3,9}\.?\s+\d{1,2},?\s*\d{4})\.?$/, function (m, date) { return '自 ' + fmtDateEn(date) + ' 起。'; }],
     // --- 吸收自 Zero-Touch 项目（antigravity-chinese-Zero-Touch） ---
     [/^(\d+)\s*([smhd])\s+ago$/i, function (m, n, u) { return n + ' ' + { s: '秒', m: '分钟', h: '小时', d: '天' }[u.toLowerCase()] + '前'; }],
     [/^Load older messages,\s*showing\s+(\d+)\s+of\s+(\d+)$/i, '加载更早的消息（已显示 $1 / $2）'],
@@ -704,6 +772,11 @@
     if (dictionary[trimmed]) {
       return text.replace(trimmed, dictionary[trimmed]);
     }
+    // 1.5 空白归一化匹配（多行设置说明等：DOM 缩进/换行与词典键不一致）
+    const normTrimmed = trimmed.replace(/\s+/g, ' ');
+    if (normIndex[normTrimmed]) {
+      return text.replace(trimmed, normIndex[normTrimmed]);
+    }
     
     const trimmedLower = trimmed.toLowerCase();
     for (const key in dictionary) {
@@ -771,6 +844,12 @@
     // This prevents long unmatched sentences from getting mangled into Chinglish.
     const wordsCount = core.split(/\s+/).filter(Boolean).length;
     if (wordsCount > 3) {
+      // 已含中文的文本多为译文自身或中英混排短语，再做子串替换会把译文二次翻译
+      //（"Bad Gateway" 套娃、/browser 变 /浏览器）。命令权限弹窗等混排文案
+      // 已由上方 dynamicRules 整串处理，这里直接保持原样。
+      if (hasChinese) {
+        return text;
+      }
       // 长文本子串匹配：用词典中的词条（>=4字符）按长度降序做替换
       // 处理 DOM 拆分或动态拼接导致完整文本无法精确匹配的情况（如权限弹窗选项）
       // 词边界用 (?<![A-Za-z0-9-]) / (?![A-Za-z0-9-])：连字符视为单词一部分，
@@ -782,8 +861,8 @@
       for (var ki = 0; ki < longKeys.length; ki++) {
         var lkey = longKeys[ki];
         var lescaped = escapeRegExp(lkey);
-        var lstartBoundary = /^[a-zA-Z0-9]/.test(lkey) ? '(?<![A-Za-z0-9-])' : '';
-        var lendBoundary = /[a-zA-Z0-9]$/.test(lkey) ? '(?![A-Za-z0-9-])' : '';
+        var lstartBoundary = /^[a-zA-Z0-9]/.test(lkey) ? '(?<![A-Za-z0-9/-])' : '';
+        var lendBoundary = /[a-zA-Z0-9]$/.test(lkey) ? '(?![A-Za-z0-9/-])' : '';
         var lregex = new RegExp(lstartBoundary + lescaped + lendBoundary, 'gi');
         longTemp = longTemp.replace(lregex, function (m) {
           longMatchedChars += (m.match(/[A-Za-z]/g) || []).length;
@@ -801,6 +880,11 @@
       lfinal = lfinal.replace(/([一-龥])\s+([一-龥])/g, '$1$2');
       // 中文之间残留的英文句号转中文句号（长文本子串替换后句中常见）
       lfinal = lfinal.replace(/([一-龥])\.\s*(?=[一-龥])/g, '$1。');
+      lfinal = localizeEnDates(lfinal);
+      // 整句未被真正译出时（仍有英文虚词残留），保持原文，杜绝破碎的中英夹杂
+      if (hasBrokenEnglish(lfinal)) {
+        return text;
+      }
       if (matchPunc) {
         lfinal += trailPunc;
       }
@@ -829,8 +913,8 @@
       if (key.length <= 3 && !/^[a-zA-Z0-9]+$/.test(key)) continue;
       const escapedKey = escapeRegExp(key);
       // 连字符视为单词一部分（见上方长文本分支说明），防止复合词被拆词误翻
-      const startBoundary = /^[a-zA-Z0-9]/.test(key) ? '(?<![A-Za-z0-9-])' : '';
-      const endBoundary = /[a-zA-Z0-9]$/.test(key) ? '(?![A-Za-z0-9-])' : '';
+      const startBoundary = /^[a-zA-Z0-9]/.test(key) ? '(?<![A-Za-z0-9/-])' : '';
+      const endBoundary = /[a-zA-Z0-9]$/.test(key) ? '(?![A-Za-z0-9/-])' : '';
       const regex = new RegExp(startBoundary + escapedKey + endBoundary, 'gi');
       temp = temp.replace(regex, function (m) {
         replaced = true;
@@ -1052,6 +1136,25 @@
     observer.observe(root, observerConfig);
     observers.push(observer);
   }
+
+  // 文件图标修复：Windows 版 language_server 以非法的 image/svg 返回图标，
+  // Chromium 拒绝渲染为 <img>（显示碎图）。出错后自行取回 SVG 用 data URL 重载。
+  const iconFixTried = new WeakSet();
+  if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG' || iconFixTried.has(img)) return;
+    const src = img.getAttribute('src') || '';
+    if (src.indexOf('/symbols-icons/') === -1) return;
+    iconFixTried.add(img);
+    fetch(src)
+      .then(r => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
+      .then(text => {
+        if (/^\s*<svg[\s>]/i.test(text)) {
+          img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(text);
+        }
+      })
+      .catch(() => {});
+  }, true);
 
   // Hook attachShadow
   const originalAttachShadow = Element.prototype.attachShadow;

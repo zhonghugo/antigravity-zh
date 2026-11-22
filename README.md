@@ -9,7 +9,7 @@
 ## ✨ 特性
 
 - **零外部依赖**：纯 Python 标准库，`python3 install.py` 即装即用
-- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**5982 条词条 + 动态正则规则**）
+- **全界面汉化**：主界面、设置面板、侧边栏、弹窗、错误提示全覆盖（**5979 条词条 + 动态正则规则**）
 - **原生菜单 / 托盘翻译**：顶部菜单栏（File/Edit/View…）与系统托盘菜单一并汉化
 - **原生弹窗 / 加载画面**：退出确认弹窗、启动加载画面等主进程原生 UI 一并汉化
 - **跨平台**：macOS / Windows / Linux 自动探测安装路径
@@ -43,7 +43,7 @@ python3 install.py --status
 
 1. 解包 `app.asar`
 2. 向 `dist/preload.js` 与 `dist/ideInstall/wizardPreload.js` 注入 DOM 翻译引擎
-   （MutationObserver 实时监听 + 5982 条中英词典，属性/placeholder/title 一并翻译）
+   （MutationObserver 实时监听 + 5979 条中英词典，属性/placeholder/title 一并翻译）
 3. 向 `dist/menu.js` 注入原生菜单翻译、`dist/tray.js` 注入托盘菜单翻译
 4. 向 `dist/main.js` 注入退出确认弹窗翻译、`dist/loadingOverlay.js` 注入启动加载画面翻译
 5. 重新打包（`chrome-devtools-mcp` 保持 unpacked，不影响功能）
@@ -56,13 +56,36 @@ antigravity-zh/
 ├── install.py          # 主安装器（安装/还原/状态）
 ├── asar.py             # 纯 Python asar 解包/打包库
 ├── dicts/
-│   ├── zh_cn.json      # 5982 条全量翻译词典
+│   ├── zh_cn.json      # 5979 条全量翻译词典
 │   └── engine.js       # DOM 翻译引擎模板（含 __DICT_ITEMS__ 占位符与动态正则规则）
 ├── SKILL.md            # AI 智能体技能说明（可直接作为豆包工作 Skill 使用）
 └── LICENSE             # MIT
 ```
 
 ## 📝 更新日志
+
+### v1.3.3（2026-11-22）
+
+* 修复 Windows 下文件/文件夹图标显示为碎图：Antigravity 自带的 language_server
+  以非法的 `Content-Type: image/svg` 返回 `/symbols-icons/*.svg`，Chromium 拒绝在
+  `<img>` 中渲染。翻译引擎现在监听图标加载失败事件，自动取回 SVG 并以 data URL
+  重新加载，文件、文件夹、附件图标恢复正常。图标正常加载时不会触发该逻辑，
+  macOS / Linux 不受影响
+
+### v1.3.2（2026-11-22）
+
+* 修复升级通知中英夹杂（如 `Opus 5.5 … will 不再 be 可用 on your …`）：模型名与生效日期
+  改为动态正则规则，不再依赖写死的 `Sonnet 5.5 / November 2, 2026` 词条，
+  模型名被 DOM 拆成独立节点时也能逐段正确翻译
+* 修复多行设置说明（Always Proceed / Request Review 等）整段不翻译：新增空白归一化索引，
+  换行、制表符、缩进与词典键不一致时仍能精确命中
+* 修复译文被二次翻译：已含中文的文本不再进入长句逐词替换（`网关错误 (502 Bad Gateway)`
+  不再套娃成 `网关错误 (502 网关错误 (502 Bad Gateway))`）
+* 修复斜杠命令被拆词：`/browser` 不再被替换成 `/浏览器`，与「保留专有名词」原则保持一致
+* 长句兜底新增破碎译文检测：逐段替换后若仍有英文虚词夹在中英之间（`will` / `be` / `on` /
+  `your` 等），整句保持英文原文，不再输出半中半英
+* 词典：5979 条。删除 3 条污染键，统一称呼为「您」，补齐 `Extension`、`SYSTEM`、
+  `Best of N`、`BoN`、`≥ 1s/1m/5m/5s` 等原样返回的界面词条
 
 ### v1.3.1（2026-10-21）
 
@@ -155,6 +178,11 @@ A: 正常现象，重新运行 `python3 install.py` 即可。
 **Q: 部分界面仍是英文？**
 A: 新版本可能引入词典未覆盖的词条。欢迎在 `dicts/zh_cn.json` 中补充并提交 PR，
    或到 Issues 反馈缺失词条。
+
+**Q: 文件图标变成碎图 / 不显示了？**
+A: 这是 Antigravity Windows 版 language_server 返回 SVG 图标时使用了非法 MIME
+   （`image/svg`）导致的官方 bug，与汉化无关。v1.3.3 起引擎会自动修复；
+   请重新运行 `python3 install.py` 并重启应用。
 
 **Q: 如何完全恢复原版？**
 A: `python3 install.py --restore`，脚本会用备份恢复。

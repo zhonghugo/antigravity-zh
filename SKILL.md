@@ -16,7 +16,7 @@ description: 为 Google Antigravity 桌面客户端（Agent Manager）安装/还
 
 1. 解包 `app.asar`
 2. 向 `dist/preload.js` 与 `dist/ideInstall/wizardPreload.js` 注入 DOM 翻译引擎
-   （MutationObserver + 全量字典 5982 条 + 动态正则规则，覆盖主界面/设置/弹窗/报错）
+   （MutationObserver + 全量字典 5979 条 + 动态正则规则，覆盖主界面/设置/弹窗/报错）
 3. 向 `dist/menu.js` 注入原生菜单翻译、`dist/tray.js` 注入托盘菜单翻译
 4. 重新打包（chrome-devtools-mcp 保持 unpacked）
 5. macOS 自动 ad-hoc 重签名
@@ -53,6 +53,7 @@ python3 install.py --status
 ## 注意事项
 
 - 非官方语言包；修改本地 `app.asar`，安装前自动备份为 `app.asar.bak`
+- 顺带修复 Windows 版文件图标碎图（language_server 以非法 MIME `image/svg` 返回 SVG 图标所致），无需额外操作
 - Antigravity 官方升级会覆盖补丁，升级后重新运行 `python3 install.py` 即可
 - macOS 若提示“应用已损坏”，执行：
   `sudo xattr -rd com.apple.quarantine /Applications/Antigravity.app`

@@ -71,6 +71,9 @@ antigravity-zh/
   `<img>` 中渲染。翻译引擎现在监听图标加载失败事件，自动取回 SVG 并以 data URL
   重新加载，文件、文件夹、附件图标恢复正常。图标正常加载时不会触发该逻辑，
   macOS / Linux 不受影响
+* 修复模型下线提示整段英文（`Use Hydrogen for better quality with lower quota
+  usage. Leaving on Nov 30.`）：模型名和下线日期改为动态模板，日期自动转成中文
+  （`使用 Hydrogen 可获得更好的质量、消耗更少额度。11月30日下线。`）
 
 ### v1.3.2（2026-11-22）
 

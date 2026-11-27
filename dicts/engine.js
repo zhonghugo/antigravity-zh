@@ -689,6 +689,16 @@
     }],
     [/^Third-?party model access will no longer be available on your current plan\.?$/i, '您当前套餐将不再提供第三方模型访问权限。'],
     [/^[Ss]tarting on ([A-Za-z]{3,9}\.?\s+\d{1,2},?\s*\d{4})\.?$/, function (m, date) { return '自 ' + fmtDateEn(date) + ' 起。'; }],
+    // --- 模型下线提示（模型名与日期为动态值，不能被逐词硬翻） ---
+    [/^Use (.+?) for better\s+quality\s+with\s+lower\s+quota\s+usage\.?\s*Leaving on ([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:,\s*(\d{4}))?\.?$/i, function (m, model, mo, d, y) {
+      const k = MONTH_CN[mo.slice(0, 3).toLowerCase()] || mo;
+      return '使用 ' + model + ' 可获得更好的质量、消耗更少额度。' + (y ? y + '年' : '') + k + d + '日下线。';
+    }],
+    [/^Use (.+?) for better\s+quality\s+with\s+lower\s+quota\s+usage\.?$/i, '使用 $1 可获得更好的质量、消耗更少额度。'],
+    [/^Leaving on ([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:,\s*(\d{4}))?\.?$/i, function (m, mo, d, y) {
+      const k = MONTH_CN[mo.slice(0, 3).toLowerCase()] || mo;
+      return (y ? y + '年' : '') + k + d + '日下线。';
+    }],
     // --- 吸收自 Zero-Touch 项目（antigravity-chinese-Zero-Touch） ---
     [/^(\d+)\s*([smhd])\s+ago$/i, function (m, n, u) { return n + ' ' + { s: '秒', m: '分钟', h: '小时', d: '天' }[u.toLowerCase()] + '前'; }],
     [/^Load older messages,\s*showing\s+(\d+)\s+of\s+(\d+)$/i, '加载更早的消息（已显示 $1 / $2）'],

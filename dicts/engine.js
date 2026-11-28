@@ -392,30 +392,38 @@
   }
   // 小写索引：短文本全词校验用（随 rebuildDict 一并重建，热重载后保持生效）
   const lowerIndex = Object.create(null);
+  const lowerValueIndex = Object.create(null);
   // 空白归一化索引：多行文案（含 \n / 制表符 / 缩进差异）与词典键逐字比较常失配，
   // 归一化后仍可精确命中；只收录归一化后与原文不同的键，避免干扰正常匹配
   const normIndex = Object.create(null);
+  const fallbackRegexCache = Object.create(null);
+  const translateCache = new Map();
   function rebuildLowerIndex() {
     for (const q in lowerIndex) delete lowerIndex[q];
+    for (const q in lowerValueIndex) delete lowerValueIndex[q];
     for (const ck in combinedDict) {
       const clk = ck.toLowerCase();
       if (!(clk in lowerIndex)) lowerIndex[clk] = ck;
+      if (!(clk in lowerValueIndex)) lowerValueIndex[clk] = combinedDict[ck];
     }
   }
 
   // ===== 外部词典热加载（借鉴 Zero-Touch 架构）=====
   // 从 ~/.antigravity-zh/zh-CN.json 读外部词典，覆盖嵌入词典；文件变化时自动重载
-  let combinedDict, sortedKeysAll, longKeysSorted;
+  let combinedDict, sortedKeysAll, longKeysSorted, longKeyLowerPairs;
   function rebuildDict() {
     combinedDict = Object.assign({}, coreWords, dictionary);
     sortedKeysAll = Object.keys(combinedDict).sort((a, b) => b.length - a.length);
     longKeysSorted = sortedKeysAll.filter(function (k) { return k.length >= 4; });
+    longKeyLowerPairs = longKeysSorted.map(function (k) { return [k, k.toLowerCase()]; });
     rebuildLowerIndex();
     for (const q in normIndex) delete normIndex[q];
     for (const nk in combinedDict) {
       const norm = nk.replace(/\s+/g, ' ').trim();
       if (norm && norm !== nk && !(norm in normIndex)) normIndex[norm] = combinedDict[nk];
     }
+    for (const q in fallbackRegexCache) delete fallbackRegexCache[q];
+    translateCache.clear();
   }
   rebuildDict();
 
@@ -465,15 +473,28 @@
     return str.split('').map(c => specials.includes(c) ? '\\' + c : c).join('');
   };
 
+  const fallbackRegex = (key) => {
+    let regex = fallbackRegexCache[key];
+    if (regex) return regex;
+    const escapedKey = escapeRegExp(key);
+    const startBoundary = /^[a-zA-Z0-9]/.test(key) ? '(?<![A-Za-z0-9/-])' : '';
+    const endBoundary = /[a-zA-Z0-9]$/.test(key) ? '(?![A-Za-z0-9/-])' : '';
+    regex = new RegExp(startBoundary + escapedKey + endBoundary, 'gi');
+    fallbackRegexCache[key] = regex;
+    return regex;
+  };
+
   // 时长格式化：1d2h3m4.5s / 1d 2h 3m -> 1 天 2 小时 3 分 4.5 秒
   const fmtDuration = function (d) {
     return d
-      .replace(/(\d+(?:\.\d+)?)\s*d/gi, '$1 天')
-      .replace(/(\d+(?:\.\d+)?)\s*h/gi, '$1 小时')
-      .replace(/(\d+(?:\.\d+)?)\s*m/gi, '$1 分')
-      .replace(/(\d+(?:\.\d+)?)\s*s/gi, '$1 秒')
+      .replace(/(\d+(?:\.\d+)?)\s*(?:days?|d)(?![a-z])/gi, '$1 天')
+      .replace(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)(?![a-z])/gi, '$1 小时')
+      .replace(/(\d+(?:\.\d+)?)\s*(?:minutes?|mins?|m)(?![a-z])/gi, '$1 分')
+      .replace(/(\d+(?:\.\d+)?)\s*(?:seconds?|secs?|s)(?![a-z])/gi, '$1 秒')
+      .replace(/(天|小时|分|秒)\s*[,，]\s*(?=\d)/g, '$1、')
       .replace(/(天|小时|分|秒)\s*(?=\d)/g, '$1 ');
   };
+  const isDurationText = (s) => /^(?:\d+(?:\.\d+)?\s*(?:days?|hours?|hrs?|minutes?|mins?|seconds?|secs?|d|h|m|s)(?![a-z])[\s,]*)+$/i.test(s);
   const MONTH_CN = { jan: '1月', feb: '2月', mar: '3月', apr: '4月', may: '5月', jun: '6月', jul: '7月', aug: '8月', sep: '9月', oct: '10月', nov: '11月', dec: '12月' };
   const meridiem = function (ap) { return ap.toUpperCase() === 'PM' ? '下午' : '上午'; };
   // "November 30, 2026" -> "2026年11月30日"；无法识别时原样返回
@@ -724,6 +745,15 @@
   ];
 
   function translateString(text) {
+    if (!text || text.length > 8192) return text;
+    if (translateCache.has(text)) return translateCache.get(text);
+    const result = translateStringUncached(text);
+    if (translateCache.size > 10000) translateCache.clear();
+    translateCache.set(text, result);
+    return result;
+  }
+
+  function translateStringUncached(text) {
     if (!text) return text;
     const trimmed = text.trim();
     if (!trimmed) return text;
@@ -735,19 +765,42 @@
       for (const ch of trimmed) puncOut += puncMap[ch] || ch;
       return text.replace(trimmed, puncOut);
     }
+    if (!/[A-Za-z]/.test(trimmed)) return text;
 
     // --- Dynamic Agent Logs Regex Rules (Fixed Escaping) ---
     let dynamicMatch = trimmed;
     let isDynamic = false;
+
+    if (isDurationText(trimmed)) {
+      dynamicMatch = fmtDuration(trimmed);
+      isDynamic = true;
+    }
+    const greeting = trimmed.match(/^(Welcome back|Good to see you),\s*(.+?)\.\s*(.+)$/i)
+      || trimmed.match(/^(Hey|Hi|Hello)\s+(.+?),\s*(.+)$/i);
+    if (greeting) {
+      const lead = greeting[1].toLowerCase();
+      const prefix = lead === 'welcome back' ? '欢迎回来' : lead === 'good to see you' ? '很高兴见到你' : '你好';
+      const question = greeting[3]
+        .replace(/Where should we pick up\?/i, '我们从哪里继续？')
+        .replace(/What's next\?/i, '接下来做什么？')
+        .replace(/what should we build today\?/i, '今天想构建什么？')
+        .replace(/how can I help\?/i, '我能帮你做什么？')
+        .replace(/what would you like to work on\?/i, '你想处理什么？')
+        .replace(/what are we working on today\?/i, '今天要做什么？');
+      dynamicMatch = prefix + '，' + greeting[2] + '。' + question;
+      isDynamic = true;
+    }
     
-    if (/^Worked for [\d smhd.]+$/.test(trimmed)) {
-      dynamicMatch = dynamicMatch.replace(/Worked for (.+)$/, function (_, d) {
+    const workedMatch = trimmed.match(/^Worked for (.+)$/i);
+    if (workedMatch && isDurationText(workedMatch[1])) {
+      dynamicMatch = dynamicMatch.replace(/Worked for (.+)$/i, function (_, d) {
         return '已工作 ' + fmtDuration(d);
       });
       isDynamic = true;
     }
-    if (/^Thought for [\d smhd.]+$/.test(trimmed)) {
-      dynamicMatch = dynamicMatch.replace(/Thought for (.+)$/, function (_, d) {
+    const thoughtMatch = trimmed.match(/^Thought for (.+)$/i);
+    if (thoughtMatch && isDurationText(thoughtMatch[1])) {
+      dynamicMatch = dynamicMatch.replace(/Thought for (.+)$/i, function (_, d) {
         return '已思考 ' + fmtDuration(d);
       });
       isDynamic = true;
@@ -787,12 +840,11 @@
     if (normIndex[normTrimmed]) {
       return text.replace(trimmed, normIndex[normTrimmed]);
     }
-    
+
     const trimmedLower = trimmed.toLowerCase();
-    for (const key in dictionary) {
-      if (key.toLowerCase() === trimmedLower) {
-        return text.replace(trimmed, dictionary[key]);
-      }
+    const lowerExact = lowerValueIndex[trimmedLower];
+    if (lowerExact) {
+      return text.replace(trimmed, lowerExact);
     }
 
     // 2. Intelligent Punctuation Stripping & Reconstruction
@@ -820,18 +872,7 @@
     }
 
     // Check stripped core in dictionary
-    let coreTranslated = '';
-    if (dictionary[core]) {
-      coreTranslated = dictionary[core];
-    } else {
-      const coreLower = core.toLowerCase();
-      for (const key in dictionary) {
-        if (key.toLowerCase() === coreLower) {
-          coreTranslated = dictionary[key];
-          break;
-        }
-      }
-    }
+    const coreTranslated = dictionary[core] || lowerValueIndex[core.toLowerCase()] || '';
 
     if (coreTranslated) {
       return text.replace(trimmed, coreTranslated + trailPunc);
@@ -850,6 +891,7 @@
     // 3. Fallback to word-by-word ONLY for short strings (<= 3 words)
     // 如果短语中已经包含了中文字符（即原本就是汉化内容或中英混排），则严禁进入英文分词翻译
     // 这可以完美阻止像中英文混排短语被分词规则执行二次翻译导致重叠和污染
+    if (core.length > 4096) return text;
     const hasChinese = /[一-龥]/.test(core);
     // This prevents long unmatched sentences from getting mangled into Chinglish.
     const wordsCount = core.split(/\s+/).filter(Boolean).length;
@@ -867,13 +909,13 @@
       let longTemp = core;
       let longReplaced = false;
       let longMatchedChars = 0;
-      const longKeys = longKeysSorted; // 预排序缓存（已过滤 >=4 字符）
-      for (var ki = 0; ki < longKeys.length; ki++) {
-        var lkey = longKeys[ki];
-        var lescaped = escapeRegExp(lkey);
-        var lstartBoundary = /^[a-zA-Z0-9]/.test(lkey) ? '(?<![A-Za-z0-9/-])' : '';
-        var lendBoundary = /[a-zA-Z0-9]$/.test(lkey) ? '(?![A-Za-z0-9/-])' : '';
-        var lregex = new RegExp(lstartBoundary + lescaped + lendBoundary, 'gi');
+      const coreLowerForLong = core.toLowerCase();
+      const longPairs = longKeyLowerPairs;
+      for (var ki = 0; ki < longPairs.length; ki++) {
+        const pair = longPairs[ki];
+        const lkey = pair[0];
+        if (coreLowerForLong.indexOf(pair[1]) === -1) continue;
+        const lregex = fallbackRegex(lkey);
         longTemp = longTemp.replace(lregex, function (m) {
           longMatchedChars += (m.match(/[A-Za-z]/g) || []).length;
           longReplaced = true;
@@ -919,14 +961,11 @@
     let temp = core;
     let replaced = false;
     const sortedKeys = sortedKeysAll; // 预排序缓存
+    const coreLowerForShort = core.toLowerCase();
     for (const key of sortedKeys) {
       if (key.length <= 3 && !/^[a-zA-Z0-9]+$/.test(key)) continue;
-      const escapedKey = escapeRegExp(key);
-      // 连字符视为单词一部分（见上方长文本分支说明），防止复合词被拆词误翻
-      const startBoundary = /^[a-zA-Z0-9]/.test(key) ? '(?<![A-Za-z0-9/-])' : '';
-      const endBoundary = /[a-zA-Z0-9]$/.test(key) ? '(?![A-Za-z0-9/-])' : '';
-      const regex = new RegExp(startBoundary + escapedKey + endBoundary, 'gi');
-      temp = temp.replace(regex, function (m) {
+      if (coreLowerForShort.indexOf(key.toLowerCase()) === -1) continue;
+      temp = temp.replace(fallbackRegex(key), function (m) {
         replaced = true;
         return combinedDict[key];
       });
